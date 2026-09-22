@@ -11,7 +11,7 @@ a daily goal. Uses your own Gemini API key — no backend server.
    publishes a "debug build" release on GitHub.
 2. On your phone's browser, sign in to GitHub and open
    `https://github.com/bruhjeshhh/GaaS/releases` — download the
-   **MacroTracker-debug.apk** attached to latest debug build.
+   **app-debug.apk** attached to the latest debug build.
 3. Tap the downloaded file. Android will warn about installing from unknown
    sources: allow it for your browser (Settings → "Install unknown apps").
 4. Open Macro Tracker. First launch asks for a Gemini API key (free at
