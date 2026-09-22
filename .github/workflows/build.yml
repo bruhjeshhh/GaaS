@@ -60,25 +60,25 @@ jobs:
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           VER="${TAG#v}"
+          printf '%s\n' \
+            'GaaS — Gains as a Service. Your personal macro tracker, powered by Gemini.' \
+            '' \
+            '## Install' \
+            '' \
+            "Download \`GaaS-${VER}.apk\` (the asset on this release) and open it on your phone, then enter your Gemini API key on the onboarding screen (get one free at aistudio.google.com/apikey)." \
+            '' \
+            '## What'\''s inside' \
+            '' \
+            '- Type a meal however you'\''d phrase it ("a bowl of curd rice, some pickle") and Gemini converts it to a structured breakdown: per-item calories, protein, carbs, fat, plus an assumptions note explaining what it guessed.' \
+            '- Review, rephrase, or accept before it counts — nothing is logged blindly.' \
+            '- Home screen shows today'\''s meals and remaining macros against your daily goal (calorie/protein/carb/fat).' \
+            '- Goals and API key stored encrypted on-device; meal history persists locally via Room.' \
+            '' \
+            '## Notes' \
+            '' \
+            '- Built on \`gemini-3.5-flash-lite\` (free tier allows ~500 requests/day).' \
+            '- This is a debug-signed build — fine for sideloading and personal use; not a Play Store release.' \
+            > /tmp/gaas-notes.md
           gh release create "$TAG" "app/build/outputs/apk/debug/app-debug.apk#GaaS-${VER}.apk" \
             --title "GaaS $VER" \
-            --notes "$(cat <<EOF
-GaaS — Gains as a Service. Your personal macro tracker, powered by Gemini.
-
-## Install
-
-Download \`GaaS-${VER}.apk\` (the asset on this release) and open it on your Android phone, then enter your Gemini API key on the onboarding screen (get one free at aistudio.google.com/apikey).
-
-## What's inside
-
-- Type a meal however you'd phrase it ("a bowl of curd rice, some pickle") and Gemini converts it to a structured breakdown: per-item calories, protein, carbs, fat, plus an assumptions note explaining what it guessed.
-- Review, rephrase, or accept before it counts — nothing is logged blindly.
-- Home screen shows today's meals and remaining macros against your daily goal (calorie/protein/carb/fat).
-- Goals and API key stored encrypted on-device; meal history persists locally via Room.
-
-## Notes
-
-- Built on \`gemini-3.5-flash-lite\` (free tier allows ~500 requests/day).
-- This is a debug-signed build — fine for sideloading and personal use; not a Play Store release.
-EOF
-)"
+            --notes-file /tmp/gaas-notes.md
