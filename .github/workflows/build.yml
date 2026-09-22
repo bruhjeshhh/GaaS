@@ -60,6 +60,7 @@ jobs:
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           VER="${TAG#v}"
+          cp app/build/outputs/apk/debug/app-debug.apk "GaaS-${VER}.apk"
           printf '%s\n' \
             'GaaS — Gains as a Service. Your personal macro tracker, powered by Gemini.' \
             '' \
@@ -79,6 +80,7 @@ jobs:
             '- Built on \`gemini-3.5-flash-lite\` (free tier allows ~500 requests/day).' \
             '- This is a debug-signed build — fine for sideloading and personal use; not a Play Store release.' \
             > /tmp/gaas-notes.md
-          gh release create "$TAG" "app/build/outputs/apk/debug/app-debug.apk#GaaS-${VER}.apk" \
+          gh release delete "$TAG" --yes || true
+          gh release create "$TAG" "GaaS-${VER}.apk" \
             --title "GaaS $VER" \
             --notes-file /tmp/gaas-notes.md
