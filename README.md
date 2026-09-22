@@ -34,7 +34,7 @@ install over the old one (same signing key is reused, so it's a clean update).
   aistudio.google.com/apikey) and set a daily calorie/protein/carb/fat goal.
   Stored in `EncryptedSharedPreferences` (`SettingsStore.kt`).
 - **Logging a meal**: type a description of any length/casualness.
-  `GeminiClient.kt` sends it straight to `gemini-2.0-flash` with a prompt
+  `GeminiClient.kt` sends it straight to `gemini-3.6-flash` with a prompt
   written specifically for vague quantities ("a little", "some", "a bowl")
   and returns structured JSON (items + totals + an assumptions note so you
   can see what it guessed).
@@ -48,8 +48,6 @@ install over the old one (same signing key is reused, so it's a clean update).
 
 - No edit-goal screen wired into nav yet (repository method exists —
   `updateGoal`).
-- No retry/backoff on Gemini rate limits — currently a single request with a
-  30s timeout.
 - The API key sits in EncryptedSharedPreferences, which is fine for a
   personal build but is still extractable on a rooted device. If this ever
   gets real users, move key custody server-side.

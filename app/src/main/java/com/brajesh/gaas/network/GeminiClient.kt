@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -75,53 +76,87 @@ class GeminiClient(private val apiKey: String) {
         }
 
         val request = Request.Builder()
-            .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey")
+            .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$apiKey")
             .post(requestJson.toRequestBody("application/json".toMediaType()))
             .build()
 
+        // Gemini throttles under demand spikes (HTTP 429/503). Retry a few times with
+        // short exponential backoff so a temporary spike doesn't surface as a failure.
+        var attempt = 1
+        while (true) {
+            val attemptResult = singleAttempt(request)
+            if (attemptResult.retryable && attempt < MAX_ATTEMPTS) {
+                attempt++
+                delay((1L shl (attempt - 1)) * 1000L)
+                continue
+            }
+            return attemptResult.result
+        }
+    }
+
+    private fun singleAttempt(request: Request): Attempt {
         return try {
             client.newCall(request).execute().use { response ->
                 val bodyStr = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
-                    return GeminiResult.ApiError("Gemini API error (${response.code}): ${bodyStr.take(300)}")
-                }
-                val text = extractText(bodyStr)
-                if (text == null) {
-                    return GeminiResult.ParseError(parseFailureReason(bodyStr))
-                }
-                val meal = parseMeal(text)
-                if (meal == null) {
-                    val seen = text.realJsonSnippet()
-                    return GeminiResult.ParseError(
-                        if (seen.isEmpty()) "Gemini returned an empty estimate. Try again."
-                        else "Couldn't read the estimate Gemini returned (saw: $seen). Try rephrasing."
+                    val retryable = response.code == 429 || response.code >= 500
+                    Attempt(
+                        GeminiResult.ApiError("Gemini API error (${response.code}): ${bodyStr.take(300)}"),
+                        retryable
                     )
+                } else {
+                    val text = extractText(bodyStr)
+                    if (text == null) {
+                        return@use Attempt(GeminiResult.ParseError(parseFailureReason(bodyStr)), retryable = false)
+                    }
+                    val meal = parseMeal(text)
+                    if (meal == null) {
+                        val seen = text.realJsonSnippet()
+                        return@use Attempt(
+                            GeminiResult.ParseError(
+                                if (seen.isEmpty()) "Gemini returned an empty estimate. Try again."
+                                else "Couldn't read the estimate Gemini returned (saw: $seen). Try rephrasing."
+                            ),
+                            retryable = false
+                        )
+                    }
+                    Attempt(GeminiResult.Success(meal), retryable = false)
                 }
-                GeminiResult.Success(meal)
             }
         } catch (e: IOException) {
-            GeminiResult.NetworkError(e)
+            // Transient network faults get one retry shot; if it persists the caller sees the failure.
+            Attempt(GeminiResult.NetworkError(e), retryable = true)
         } catch (e: Exception) {
-            GeminiResult.ParseError(e.message ?: "Unknown parse failure")
+            Attempt(
+                GeminiResult.ParseError(
+                    "Unexpected failure: ${e::class.simpleName ?: "?"} — ${e.message ?: "(no message)"}. " +
+                        "This is a bug or a weird device state — it is NOT a Gemini reply problem."
+                ),
+                retryable = false
+            )
         }
+    }
+
+    private data class Attempt(val result: GeminiResult, val retryable: Boolean)
+
+    companion object {
+        private const val MAX_ATTEMPTS = 3
     }
 
     /**
      * Gemini's response wraps the generated text inside candidates[0].content.parts[0].text.
      * We pull just that string back out before decoding it as our ParsedMeal shape.
      */
-    private fun extractText(rawBody: String): String? {
+    private fun extractText(rawBody: String): String? = runCatching {
         val envelope = json.parseToJsonElement(rawBody)
-        return runCatching {
-            envelope.jsonObject["candidates"]
-                ?.jsonArray?.get(0)
-                ?.jsonObject?.get("content")
-                ?.jsonObject?.get("parts")
-                ?.jsonArray?.get(0)
-                ?.jsonObject?.get("text")
-                ?.jsonPrimitive?.content
-        }.getOrNull()
-    }
+        envelope.jsonObject["candidates"]
+            ?.jsonArray?.get(0)
+            ?.jsonObject?.get("content")
+            ?.jsonObject?.get("parts")
+            ?.jsonArray?.get(0)
+            ?.jsonObject?.get("text")
+            ?.jsonPrimitive?.content
+    }.getOrNull()
 
     /** Turns a parse-time failure into a human-readable reason by inspecting the API envelope. */
     private fun parseFailureReason(rawBody: String): String {
@@ -138,7 +173,7 @@ class GeminiClient(private val apiKey: String) {
             finishReason == "MAX_TOKENS" -> "Gemini's estimate was cut off mid-answer. Try a shorter description."
             finishReason == "SAFETY" -> "Gemini flagged the request as unsafe. Try rephrasing."
             rawBody.isBlank() -> "Gemini returned an empty response. Check your network and try again."
-            else -> "Gemini returned no usable content."
+            else -> "Gemini returned no usable content (saw: ${rawBody.realJsonSnippet()}). Try again or rephrase."
         }
     }
 

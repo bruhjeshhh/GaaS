@@ -9,12 +9,14 @@ import com.brajesh.gaas.network.GeminiResult
 import com.brajesh.gaas.network.ParsedMeal
 import com.brajesh.gaas.repository.DayTotals
 import com.brajesh.gaas.repository.MacroRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed class PendingEstimate {
     object Idle : PendingEstimate()
@@ -51,7 +53,8 @@ class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
         if (description.isBlank()) return
         _pendingEstimate.value = PendingEstimate.Loading
         viewModelScope.launch {
-            when (val result = repo.estimateMeal(description)) {
+            val result = withContext(Dispatchers.IO) { repo.estimateMeal(description) }
+            when (result) {
                 is GeminiResult.Success ->
                     _pendingEstimate.value = PendingEstimate.Ready(description, result.meal)
                 is GeminiResult.ApiError ->
