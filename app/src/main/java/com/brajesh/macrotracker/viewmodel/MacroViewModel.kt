@@ -1,0 +1,88 @@
+package com.brajesh.macrotracker.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.brajesh.macrotracker.data.MacroGoal
+import com.brajesh.macrotracker.data.MealEntry
+import com.brajesh.macrotracker.network.GeminiResult
+import com.brajesh.macrotracker.network.ParsedMeal
+import com.brajesh.macrotracker.repository.DayTotals
+import com.brajesh.macrotracker.repository.MacroRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+sealed class PendingEstimate {
+    object Idle : PendingEstimate()
+    object Loading : PendingEstimate()
+    data class Ready(val rawText: String, val parsed: ParsedMeal) : PendingEstimate()
+    data class Failed(val message: String) : PendingEstimate()
+}
+
+class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
+
+    private val dayKey = repo.todayKey()
+
+    val todaysMeals: StateFlow<List<MealEntry>> =
+        repo.mealsForDay(dayKey).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val todayTotals: StateFlow<DayTotals> =
+        todaysMeals.map { meals -> repo.computeTotals(meals) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), repo.computeTotals(emptyList()))
+
+    private val _pendingEstimate = MutableStateFlow<PendingEstimate>(PendingEstimate.Idle)
+    val pendingEstimate: StateFlow<PendingEstimate> = _pendingEstimate
+
+    val isOnboarded: Boolean get() = repo.isOnboarded
+
+    fun completeOnboarding(apiKey: String, goal: MacroGoal) {
+        repo.setApiKey(apiKey)
+        repo.setGoal(goal)
+    }
+
+    fun updateGoal(goal: MacroGoal) = repo.setGoal(goal)
+
+    /** Sends the verbose meal description to Gemini and stages the result for user confirmation. */
+    fun estimateMeal(description: String) {
+        if (description.isBlank()) return
+        _pendingEstimate.value = PendingEstimate.Loading
+        viewModelScope.launch {
+            when (val result = repo.estimateMeal(description)) {
+                is GeminiResult.Success ->
+                    _pendingEstimate.value = PendingEstimate.Ready(description, result.meal)
+                is GeminiResult.ApiError ->
+                    _pendingEstimate.value = PendingEstimate.Failed(result.message)
+                is GeminiResult.ParseError ->
+                    _pendingEstimate.value = PendingEstimate.Failed("Couldn't parse Gemini's response. Try rephrasing.")
+                is GeminiResult.NetworkError ->
+                    _pendingEstimate.value = PendingEstimate.Failed("Network error: ${result.cause.message}")
+            }
+        }
+    }
+
+    /** User confirmed the parsed estimate on the review screen — persist it. */
+    fun confirmPendingMeal() {
+        val current = _pendingEstimate.value
+        if (current is PendingEstimate.Ready) {
+            viewModelScope.launch {
+                repo.logMeal(current.rawText, current.parsed)
+                _pendingEstimate.value = PendingEstimate.Idle
+            }
+        }
+    }
+
+    fun discardPendingMeal() {
+        _pendingEstimate.value = PendingEstimate.Idle
+    }
+
+    fun deleteMeal(entry: MealEntry) = viewModelScope.launch { repo.deleteMeal(entry) }
+
+    class Factory(private val repo: MacroRepository) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = MacroViewModel(repo) as T
+    }
+}
