@@ -6,19 +6,18 @@ a daily goal. Uses your own Gemini API key — no backend server.
 
 ## Get it on your phone (no cable, no local SDK)
 
-1. Push a commit to `main` (or press **Run workflow** under the repo's
-   **Actions → Build APK** tab). A GitHub Actions job compiles the app and
-   publishes a "debug build" release on GitHub.
-2. On your phone's browser, sign in to GitHub and open
-   `https://github.com/bruhjeshhh/GaaS/releases` — download the
-   **app-debug.apk** attached to the latest debug build.
-3. Tap the downloaded file. Android will warn about installing from unknown
+1. The current stable release is **GaaS 1.0.0**: on your phone's browser,
+   open https://github.com/bruhjeshhh/GaaS/releases and download
+   **GaaS-1.0.0.apk** from the `v1.0.0` release.
+2. Tap the downloaded file. Android will warn about installing from unknown
    sources: allow it for your browser (Settings → "Install unknown apps").
-4. Open GaaS. First launch asks for a Gemini API key (free at
+3. Open GaaS. First launch asks for a Gemini API key (free at
    aistudio.google.com/apikey) and your daily goal.
 
-Every future push rebuilds and replaces that same APK — just re-download and
-install over the old one (same signing key is reused, so it's a clean update).
+Prefer the latest bleeding-edge build? Fetch **app-debug.apk** from the
+rolling **debug-build** release instead (auto-rebuilt on every push). Since the
+same signing key is reused, any of these install over each other as a clean
+update.
 
 ## Build locally (optional)
 

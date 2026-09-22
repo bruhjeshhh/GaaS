@@ -3,6 +3,7 @@ name: Build APK
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -42,7 +43,7 @@ jobs:
           if-no-files-found: error
 
       - name: Publish rolling debug release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/heads/')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -50,3 +51,34 @@ jobs:
           gh release create debug-build app/build/outputs/apk/debug/app-debug.apk \
             --title "GaaS — Gains as a Service (debug build)" \
             --notes "Auto-built from commit \`${{ github.sha }}\` on branch \`${{ github.ref_name }}\`."
+
+      - name: Publish versioned release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VER="${TAG#v}"
+          gh release create "$TAG" "app/build/outputs/apk/debug/app-debug.apk#GaaS-${VER}.apk" \
+            --title "GaaS $VER" \
+            --notes "$(cat <<EOF
+GaaS — Gains as a Service. Your personal macro tracker, powered by Gemini.
+
+## Install
+
+Download \`GaaS-${VER}.apk\` (the asset on this release) and open it on your Android phone, then enter your Gemini API key on the onboarding screen (get one free at aistudio.google.com/apikey).
+
+## What's inside
+
+- Type a meal however you'd phrase it ("a bowl of curd rice, some pickle") and Gemini converts it to a structured breakdown: per-item calories, protein, carbs, fat, plus an assumptions note explaining what it guessed.
+- Review, rephrase, or accept before it counts — nothing is logged blindly.
+- Home screen shows today's meals and remaining macros against your daily goal (calorie/protein/carb/fat).
+- Goals and API key stored encrypted on-device; meal history persists locally via Room.
+
+## Notes
+
+- Built on \`gemini-3.5-flash-lite\` (free tier allows ~500 requests/day).
+- This is a debug-signed build — fine for sideloading and personal use; not a Play Store release.
+EOF
+)"
