@@ -76,7 +76,7 @@ class GeminiClient(private val apiKey: String) {
         }
 
         val request = Request.Builder()
-            .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$apiKey")
+            .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=$apiKey")
             .post(requestJson.toRequestBody("application/json".toMediaType()))
             .build()
 
