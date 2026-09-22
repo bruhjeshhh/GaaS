@@ -57,7 +57,7 @@ class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
                 is GeminiResult.ApiError ->
                     _pendingEstimate.value = PendingEstimate.Failed(result.message)
                 is GeminiResult.ParseError ->
-                    _pendingEstimate.value = PendingEstimate.Failed("Couldn't parse Gemini's response. Try rephrasing.")
+                    _pendingEstimate.value = PendingEstimate.Failed(result.message)
                 is GeminiResult.NetworkError ->
                     _pendingEstimate.value = PendingEstimate.Failed("Network error: ${result.cause.message}")
             }

@@ -1,9 +1,12 @@
 package com.brajesh.gaas.network
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -37,7 +40,7 @@ data class ParsedMeal(
 sealed class GeminiResult {
     data class Success(val meal: ParsedMeal) : GeminiResult()
     data class ApiError(val message: String) : GeminiResult()
-    data class ParseError(val rawResponse: String) : GeminiResult()
+    data class ParseError(val message: String) : GeminiResult()
     data class NetworkError(val cause: Throwable) : GeminiResult()
 }
 
@@ -45,6 +48,12 @@ sealed class GeminiResult {
  * Talks directly to the Gemini API using the user's own key — no backend in between.
  * The prompt is the whole trick here: it's written for someone describing a meal the
  * way they'd tell a friend about it, not someone entering precise gram weights.
+ *
+ * Parsing is deliberately hand-rolled rather than `decodeFromString<ParsedMeal>`:
+ * a strict reflective decode throws on any single deviation from the schema, and models
+ * slip all the time (markdown fences, trailing prose, numbers where strings belong,
+ * `null` fields, truncated output). We instead walk the JSON with type coercion so a
+ * loose response still becomes a usable estimate instead of an error wall.
  */
 class GeminiClient(private val apiKey: String) {
 
@@ -61,7 +70,7 @@ class GeminiClient(private val apiKey: String) {
         val requestJson = buildString {
             append("""{"contents":[{"parts":[{"text":""")
             append(json.encodeToString(prompt))
-            append("""}]}],"generationConfig":{"response_mime_type":"application/json","temperature":0.2}}""")
+            append("""}]}],"generationConfig":{"response_mime_type":"application/json","temperature":0.2,"maxOutputTokens":2048}}""")
         }
 
         val request = Request.Builder()
@@ -75,8 +84,18 @@ class GeminiClient(private val apiKey: String) {
                 if (!response.isSuccessful) {
                     return GeminiResult.ApiError("Gemini API error (${response.code}): ${bodyStr.take(300)}")
                 }
-                val text = extractText(bodyStr) ?: return GeminiResult.ParseError(bodyStr)
-                val meal = json.decodeFromString<ParsedMeal>(text)
+                val text = extractText(bodyStr)
+                if (text == null) {
+                    return GeminiResult.ParseError(parseFailureReason(bodyStr))
+                }
+                val meal = parseMeal(text)
+                if (meal == null) {
+                    val seen = text.realJsonSnippet()
+                    return GeminiResult.ParseError(
+                        if (seen.isEmpty()) "Gemini returned an empty estimate. Try again."
+                        else "Couldn't read the estimate Gemini returned (saw: $seen). Try rephrasing."
+                    )
+                }
                 GeminiResult.Success(meal)
             }
         } catch (e: IOException) {
@@ -87,7 +106,7 @@ class GeminiClient(private val apiKey: String) {
     }
 
     /**
-     * Gemini's response wraps the actual JSON text inside candidates[0].content.parts[0].text.
+     * Gemini's response wraps the generated text inside candidates[0].content.parts[0].text.
      * We pull just that string back out before decoding it as our ParsedMeal shape.
      */
     private fun extractText(rawBody: String): String? {
@@ -102,6 +121,92 @@ class GeminiClient(private val apiKey: String) {
                 ?.jsonPrimitive?.content
         }.getOrNull()
     }
+
+    /** Turns a parse-time failure into a human-readable reason by inspecting the API envelope. */
+    private fun parseFailureReason(rawBody: String): String {
+        val root = runCatching { json.parseToJsonElement(rawBody) }.getOrNull() as? JsonObject
+        val finishReason = root?.get("candidates")
+            ?.jsonArrayOrNull()?.firstOrNull()
+            ?.jsonObjectOrNull()?.get("finishReason")
+            ?.stringValue()
+        val blockReason = root?.get("promptFeedback")
+            ?.jsonObjectOrNull()?.get("blockReason")
+            ?.stringValue()
+        return when {
+            blockReason != null -> "Gemini blocked the request ($blockReason). Try rephrasing."
+            finishReason == "MAX_TOKENS" -> "Gemini's estimate was cut off mid-answer. Try a shorter description."
+            finishReason == "SAFETY" -> "Gemini flagged the request as unsafe. Try rephrasing."
+            rawBody.isBlank() -> "Gemini returned an empty response. Check your network and try again."
+            else -> "Gemini returned no usable content."
+        }
+    }
+
+    /**
+     * Digs the JSON object out of whatever text the model produced — it may be wrapped in
+     * markdown fences or have a sentence trailing it. First `{` to last `}` handles all of it.
+     */
+    private fun parseMeal(text: String): ParsedMeal? {
+        val root = extractJsonObject(text) as? JsonObject ?: return null
+
+        val items = root["items"].jsonArrayOrNull().orEmpty().mapNotNull { element ->
+            val o = element.jsonObjectOrNull() ?: return@mapNotNull null
+            ParsedItem(
+                name = o["name"].stringValue(),
+                quantity = o["quantity"].stringValue(),
+                calories = o["calories"].doubleValue(),
+                proteinG = o["proteinG"].doubleValue(),
+                carbsG = o["carbsG"].doubleValue(),
+                fatG = o["fatG"].doubleValue()
+            )
+        }
+
+        // Trust the model's totals when present; if it omitted/zeroed them, backfill from the items.
+        fun total(field: String, sum: Double): Double {
+            val declared = root[field].doubleValue()
+            return if (declared > 0) declared else sum
+        }
+
+        val sumCalories = items.sumOf { it.calories }
+        val sumProteinG = items.sumOf { it.proteinG }
+        val sumCarbsG = items.sumOf { it.carbsG }
+        val sumFatG = items.sumOf { it.fatG }
+
+        return ParsedMeal(
+            items = items,
+            totalCalories = total("totalCalories", sumCalories),
+            totalProteinG = total("totalProteinG", sumProteinG),
+            totalCarbsG = total("totalCarbsG", sumCarbsG),
+            totalFatG = total("totalFatG", sumFatG),
+            assumptionsNote = root["assumptionsNote"].stringValue()
+        )
+    }
+
+    /** The first `{` to the last `}` in the text, parsed — or null if there is no JSON in it. */
+    private fun extractJsonObject(text: String): JsonElement? {
+        val start = text.indexOf('{')
+        val end = text.lastIndexOf('}')
+        if (start < 0 || end <= start) return null
+        return runCatching { json.parseToJsonElement(text.substring(start, end + 1)) }.getOrNull()
+    }
+
+    private fun String.realJsonSnippet(): String {
+        val start = indexOf('{')
+        val end = lastIndexOf('}')
+        val sample = if (start >= 0 && end > start) substring(start, end + 1) else trim()
+        return sample.replace('\n', ' ').take(120)
+    }
+
+    // ---- coercion helpers: never throw, degrade to sensible defaults ----
+
+    private fun JsonElement?.stringValue(fallback: String = ""): String =
+        if (this is JsonPrimitive) contentOrNull ?: fallback else fallback
+
+    private fun JsonElement?.doubleValue(fallback: Double = 0.0): Double =
+        if (this is JsonPrimitive) (contentOrNull?.toDoubleOrNull() ?: fallback) else fallback
+
+    private fun JsonElement?.jsonObjectOrNull(): JsonObject? = this as? JsonObject
+
+    private fun JsonElement?.jsonArrayOrNull(): JsonArray? = this as? JsonArray
 
     private fun buildPrompt(mealDescription: String): String = """
         You are a nutrition estimation assistant inside a food-logging app. The user
@@ -122,8 +227,10 @@ class GeminiClient(private val apiKey: String) {
         common/likely reading rather than asking for clarification — this is a single-shot
         estimate, not a conversation.
 
-        Respond with ONLY valid JSON matching exactly this shape, no markdown fences,
-        no commentary outside the JSON:
+        Respond with ONLY valid JSON in this exact shape. No markdown fences, no
+        commentary before or after, no nulls. Always emit the totals even
+        if you have to sum the items yourself. Numbers must be plain JSON numbers
+        (never quoted strings), and "quantity" must be a plain string:
 
         {
           "items": [
