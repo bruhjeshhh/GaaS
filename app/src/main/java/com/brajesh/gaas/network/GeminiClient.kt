@@ -5,6 +5,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
@@ -199,10 +200,10 @@ class GeminiClient(private val apiKey: String) {
     // ---- coercion helpers: never throw, degrade to sensible defaults ----
 
     private fun JsonElement?.stringValue(fallback: String = ""): String =
-        if (this is JsonPrimitive) contentOrNull ?: fallback else fallback
+        if (this is JsonPrimitive && this != JsonNull) content else fallback
 
     private fun JsonElement?.doubleValue(fallback: Double = 0.0): Double =
-        if (this is JsonPrimitive) (contentOrNull?.toDoubleOrNull() ?: fallback) else fallback
+        if (this is JsonPrimitive && this != JsonNull) (content.toDoubleOrNull() ?: fallback) else fallback
 
     private fun JsonElement?.jsonObjectOrNull(): JsonObject? = this as? JsonObject
 
