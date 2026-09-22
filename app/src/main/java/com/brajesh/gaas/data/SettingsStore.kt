@@ -1,4 +1,4 @@
-package com.brajesh.macrotracker.data
+package com.brajesh.gaas.data
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -28,13 +28,13 @@ class SettingsStore(context: Context) {
             .build()
         EncryptedSharedPreferences.create(
             context,
-            "macro_tracker_settings",
+            "gaas_settings",
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
     } catch (t: Throwable) {
-        context.getSharedPreferences("macro_tracker_settings", Context.MODE_PRIVATE)
+        context.getSharedPreferences("gaas_settings", Context.MODE_PRIVATE)
     }
 
     var geminiApiKey: String?

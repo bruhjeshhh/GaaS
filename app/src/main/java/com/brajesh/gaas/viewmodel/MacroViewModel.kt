@@ -1,14 +1,14 @@
-package com.brajesh.macrotracker.viewmodel
+package com.brajesh.gaas.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.brajesh.macrotracker.data.MacroGoal
-import com.brajesh.macrotracker.data.MealEntry
-import com.brajesh.macrotracker.network.GeminiResult
-import com.brajesh.macrotracker.network.ParsedMeal
-import com.brajesh.macrotracker.repository.DayTotals
-import com.brajesh.macrotracker.repository.MacroRepository
+import com.brajesh.gaas.data.MacroGoal
+import com.brajesh.gaas.data.MealEntry
+import com.brajesh.gaas.network.GeminiResult
+import com.brajesh.gaas.network.ParsedMeal
+import com.brajesh.gaas.repository.DayTotals
+import com.brajesh.gaas.repository.MacroRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

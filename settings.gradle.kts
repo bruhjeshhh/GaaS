@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MacroTracker"
+rootProject.name = "GaaS"
 include(":app")

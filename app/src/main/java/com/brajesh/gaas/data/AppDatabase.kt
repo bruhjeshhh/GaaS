@@ -1,4 +1,4 @@
-package com.brajesh.macrotracker.data
+package com.brajesh.gaas.data
 
 import android.content.Context
 import androidx.room.Database
@@ -17,7 +17,7 @@ abstract class AppDatabase : RoomDatabase() {
                 instance ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "macro_tracker.db"
+                    "gaas.db"
                 ).build().also { instance = it }
             }
     }

@@ -1,4 +1,4 @@
-package com.brajesh.macrotracker.ui
+package com.brajesh.gaas.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.brajesh.macrotracker.data.MacroGoal
+import com.brajesh.gaas.data.MacroGoal
 
 @Composable
 fun OnboardingScreen(onComplete: (apiKey: String, goal: MacroGoal) -> Unit) {
@@ -29,7 +29,7 @@ fun OnboardingScreen(onComplete: (apiKey: String, goal: MacroGoal) -> Unit) {
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Set up Macro Tracker", style = MaterialTheme.typography.headlineSmall)
+        Text("Set up GaaS", style = MaterialTheme.typography.headlineSmall)
         Text(
             "This app estimates macros from what you type using your own Gemini API " +
                 "key — nothing is sent to any server but Google's. Get a free key at " +

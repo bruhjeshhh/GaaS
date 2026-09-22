@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.brajesh.macrotracker"
+    namespace = "com.brajesh.gaas"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.brajesh.macrotracker"
+        applicationId = "com.brajesh.gaas"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

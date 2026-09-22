@@ -1,12 +1,12 @@
-package com.brajesh.macrotracker.repository
+package com.brajesh.gaas.repository
 
-import com.brajesh.macrotracker.data.MacroGoal
-import com.brajesh.macrotracker.data.MealDao
-import com.brajesh.macrotracker.data.MealEntry
-import com.brajesh.macrotracker.data.SettingsStore
-import com.brajesh.macrotracker.network.GeminiClient
-import com.brajesh.macrotracker.network.GeminiResult
-import com.brajesh.macrotracker.network.ParsedMeal
+import com.brajesh.gaas.data.MacroGoal
+import com.brajesh.gaas.data.MealDao
+import com.brajesh.gaas.data.MealEntry
+import com.brajesh.gaas.data.SettingsStore
+import com.brajesh.gaas.network.GeminiClient
+import com.brajesh.gaas.network.GeminiResult
+import com.brajesh.gaas.network.ParsedMeal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

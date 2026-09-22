@@ -1,4 +1,4 @@
-package com.brajesh.macrotracker
+package com.brajesh.gaas
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,13 +12,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.brajesh.macrotracker.data.AppDatabase
-import com.brajesh.macrotracker.data.SettingsStore
-import com.brajesh.macrotracker.repository.MacroRepository
-import com.brajesh.macrotracker.ui.AddMealScreen
-import com.brajesh.macrotracker.ui.HomeScreen
-import com.brajesh.macrotracker.ui.OnboardingScreen
-import com.brajesh.macrotracker.viewmodel.MacroViewModel
+import com.brajesh.gaas.data.AppDatabase
+import com.brajesh.gaas.data.SettingsStore
+import com.brajesh.gaas.repository.MacroRepository
+import com.brajesh.gaas.ui.AddMealScreen
+import com.brajesh.gaas.ui.HomeScreen
+import com.brajesh.gaas.ui.OnboardingScreen
+import com.brajesh.gaas.viewmodel.MacroViewModel
 
 private enum class Screen { HOME, ADD_MEAL }
 

@@ -1,4 +1,4 @@
-package com.brajesh.macrotracker.data
+package com.brajesh.gaas.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

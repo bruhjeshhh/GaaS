@@ -1,4 +1,4 @@
-package com.brajesh.macrotracker.ui
+package com.brajesh.gaas.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,8 +9,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.brajesh.macrotracker.data.MealEntry
-import com.brajesh.macrotracker.repository.DayTotals
+import com.brajesh.gaas.data.MealEntry
+import com.brajesh.gaas.repository.DayTotals
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)

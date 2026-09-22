@@ -19,6 +19,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Cache debug keystore (so updates install over earlier builds)
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Build debug APK
@@ -41,6 +47,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete debug-build --yes --cleanup-tag || true
-          gh release create debug-build app/build/outputs/apk/debug/app-debug.apk#MacroTracker-debug.apk \
-            --title "Macro Tracker debug build" \
+          gh release create debug-build app/build/outputs/apk/debug/app-debug.apk \
+            --title "GaaS — Gains as a Service (debug build)" \
             --notes "Auto-built from commit \`${{ github.sha }}\` on branch \`${{ github.ref_name }}\`."

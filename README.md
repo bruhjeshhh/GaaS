@@ -1,4 +1,4 @@
-# Macro Tracker
+# GaaS — Gains as a Service
 
 Log meals in plain, verbose language ("3 rotis with a little ghee, homemade
 paneer") and get macros back, with a running "remaining today" total against
@@ -14,10 +14,11 @@ a daily goal. Uses your own Gemini API key — no backend server.
    **app-debug.apk** attached to the latest debug build.
 3. Tap the downloaded file. Android will warn about installing from unknown
    sources: allow it for your browser (Settings → "Install unknown apps").
-4. Open Macro Tracker. First launch asks for a Gemini API key (free at
+4. Open GaaS. First launch asks for a Gemini API key (free at
    aistudio.google.com/apikey) and your daily goal.
 
-Every future push rebuilds and replaces that same APK — just re-download.
+Every future push rebuilds and replaces that same APK — just re-download and
+install over the old one (same signing key is reused, so it's a clean update).
 
 ## Build locally (optional)
 

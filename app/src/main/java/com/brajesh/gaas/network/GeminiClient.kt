@@ -1,4 +1,4 @@
-package com.brajesh.macrotracker.network
+package com.brajesh.gaas.network
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
