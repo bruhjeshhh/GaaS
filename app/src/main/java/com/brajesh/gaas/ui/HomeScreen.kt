@@ -1,12 +1,28 @@
 package com.brajesh.gaas.ui
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.*
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.brajesh.gaas.data.MealEntry
@@ -19,10 +35,18 @@ fun HomeScreen(
     totals: DayTotals,
     meals: List<MealEntry>,
     onAddMeal: () -> Unit,
-    onDeleteMeal: (MealEntry) -> Unit
+    onDeleteMeal: (MealEntry) -> Unit,
+    onOpenHistory: () -> Unit
 ) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Today") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Today") },
+                actions = {
+                    TextButton(onClick = onOpenHistory) { Text("History") }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddMeal) { Icon(Icons.Default.Add, contentDescription = "Log meal") }
         }
@@ -35,7 +59,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item { Spacer(Modifier.height(8.dp)) }
-            item { RemainingCard(totals) }
+            item { ProgressCard(totals) }
             item {
                 Text(
                     "Logged today",
@@ -54,34 +78,39 @@ fun HomeScreen(
     }
 }
 
+/**
+ * Today's goal completion. Replaces the old text-only RemainingCard: a row of
+ * progress rings (calories + macros) that keep the "N left" info while adding
+ * the at-a-glance fill fraction and an explicit over-goal state.
+ */
 @Composable
-private fun RemainingCard(totals: DayTotals) {
+private fun ProgressCard(totals: DayTotals) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Today's progress", style = MaterialTheme.typography.titleMedium)
+                if (totals.goal != null) {
+                    Text(
+                        "${totals.consumedCalories.roundToInt()} / ${totals.goal.calories.roundToInt()} kcal",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
             if (totals.goal == null) {
                 Text("No goal set yet.")
-                return@Column
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    MacroRing("Calories", totals.consumedCalories, totals.goal.calories, "kcal", Modifier.weight(1f))
+                    MacroRing("Protein", totals.consumedProteinG, totals.goal.proteinG, "g", Modifier.weight(1f))
+                    MacroRing("Carbs", totals.consumedCarbsG, totals.goal.carbsG, "g", Modifier.weight(1f))
+                    MacroRing("Fat", totals.consumedFatG, totals.goal.fatG, "g", Modifier.weight(1f))
+                }
             }
-            Text("Remaining today", style = MaterialTheme.typography.titleMedium)
-            MacroRow("Calories", totals.remainingCalories, totals.goal.calories)
-            MacroRow("Protein", totals.remainingProteinG, totals.goal.proteinG, unit = "g")
-            MacroRow("Carbs", totals.remainingCarbsG, totals.goal.carbsG, unit = "g")
-            MacroRow("Fat", totals.remainingFatG, totals.goal.fatG, unit = "g")
         }
-    }
-}
-
-@Composable
-private fun MacroRow(label: String, remaining: Double, goal: Double, unit: String = "") {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(label)
-        val over = remaining < 0
-        Text(
-            "${remaining.roundToInt()}$unit / ${goal.roundToInt()}$unit${if (over) " (over)" else " left"}",
-            color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-        )
     }
 }

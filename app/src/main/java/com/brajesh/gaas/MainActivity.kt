@@ -16,11 +16,18 @@ import com.brajesh.gaas.data.AppDatabase
 import com.brajesh.gaas.data.SettingsStore
 import com.brajesh.gaas.repository.MacroRepository
 import com.brajesh.gaas.ui.AddMealScreen
+import com.brajesh.gaas.ui.DayDetailScreen
+import com.brajesh.gaas.ui.HistoryScreen
 import com.brajesh.gaas.ui.HomeScreen
 import com.brajesh.gaas.ui.OnboardingScreen
 import com.brajesh.gaas.viewmodel.MacroViewModel
 
-private enum class Screen { HOME, ADD_MEAL }
+private sealed interface Screen {
+    data object Home : Screen
+    data object AddMeal : Screen
+    data object History : Screen
+    data class DayDetail(val dayKey: String) : Screen
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +42,7 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier) {
                     val viewModel: MacroViewModel = viewModel(factory = MacroViewModel.Factory(repo))
                     var onboarded by remember { mutableStateOf(repo.isOnboarded) }
-                    var screen by remember { mutableStateOf(Screen.HOME) }
+                    var screen by remember { mutableStateOf<Screen>(Screen.Home) }
 
                     if (!onboarded) {
                         OnboardingScreen(onComplete = { key, goal ->
@@ -43,30 +50,59 @@ class MainActivity : ComponentActivity() {
                             onboarded = true
                         })
                     } else {
-                        when (screen) {
-                            Screen.HOME -> {
+                        when (val current = screen) {
+                            Screen.Home -> {
                                 val totals by viewModel.todayTotals.collectAsState()
                                 val meals by viewModel.todaysMeals.collectAsState()
                                 HomeScreen(
                                     totals = totals,
                                     meals = meals,
-                                    onAddMeal = { screen = Screen.ADD_MEAL },
-                                    onDeleteMeal = { viewModel.deleteMeal(it) }
+                                    onAddMeal = { screen = Screen.AddMeal },
+                                    onDeleteMeal = { viewModel.deleteMeal(it) },
+                                    onOpenHistory = { screen = Screen.History }
                                 )
                             }
-                            Screen.ADD_MEAL -> {
+                            Screen.AddMeal -> {
                                 val pending by viewModel.pendingEstimate.collectAsState()
                                 AddMealScreen(
                                     pending = pending,
                                     onEstimate = { viewModel.estimateMeal(it) },
                                     onConfirm = {
                                         viewModel.confirmPendingMeal()
-                                        screen = Screen.HOME
+                                        screen = Screen.Home
                                     },
                                     onDiscard = { viewModel.discardPendingMeal() },
                                     onBack = {
                                         viewModel.discardPendingMeal()
-                                        screen = Screen.HOME
+                                        screen = Screen.Home
+                                    }
+                                )
+                            }
+                            Screen.History -> {
+                                val days by viewModel.historyDays.collectAsState()
+                                val weekly by viewModel.weekly.collectAsState()
+                                val goal by viewModel.goal.collectAsState()
+                                HistoryScreen(
+                                    days = days,
+                                    goal = goal,
+                                    weekly = weekly,
+                                    onDayClick = { key ->
+                                        viewModel.selectDay(key)
+                                        screen = Screen.DayDetail(key)
+                                    },
+                                    onBack = { screen = Screen.Home }
+                                )
+                            }
+                            is Screen.DayDetail -> {
+                                val meals by viewModel.selectedDayMeals.collectAsState()
+                                val goal by viewModel.goal.collectAsState()
+                                DayDetailScreen(
+                                    dayKey = current.dayKey,
+                                    goal = goal,
+                                    meals = meals,
+                                    onBack = {
+                                        viewModel.selectDay(null)
+                                        screen = Screen.History
                                     }
                                 )
                             }
