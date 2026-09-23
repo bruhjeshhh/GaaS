@@ -1,5 +1,6 @@
 package com.brajesh.gaas.repository
 
+import com.brajesh.gaas.data.DaySummary
 import com.brajesh.gaas.data.MacroGoal
 import com.brajesh.gaas.data.MealDao
 import com.brajesh.gaas.data.MealEntry
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
 
@@ -26,6 +28,21 @@ data class DayTotals(
     val remainingCarbsG get() = (goal?.carbsG ?: 0.0) - consumedCarbsG
     val remainingFatG get() = (goal?.fatG ?: 0.0) - consumedFatG
 }
+
+/**
+ * A single day's slot in the weekly chart. `hasData` distinguishes "no meals
+ * were ever logged that day" (missing from the DB entirely, kept separate so
+ * sparse history doesn't get faked as a scary zero bar) from a genuinely
+ * logged 0 kcal day.
+ */
+data class DaySlice(
+    val dayKey: String,
+    val calories: Double,
+    val proteinG: Double,
+    val carbsG: Double,
+    val fatG: Double,
+    val hasData: Boolean
+)
 
 class MacroRepository(
     private val dao: MealDao,
@@ -43,6 +60,24 @@ class MacroRepository(
     val isOnboarded: Boolean get() = settings.isOnboarded
 
     fun mealsForDay(dayKey: String): Flow<List<MealEntry>> = dao.mealsForDay(dayKey)
+
+    /** Per-day totals for history/charts. Only days with meals are present. */
+    fun daySummaries(): Flow<List<DaySummary>> = dao.daySummaries()
+
+    /**
+     * Builds the last 7 days as [DaySlice]s, oldest → newest, padding missing
+     * days with hasData=false. Uses LocalDate (API 26+, ISO formatting) so the
+     * keys line up with the SimpleDateFormat("yyyy-MM-dd") used by [todayKey].
+     */
+    fun recentDailySlices(summaries: List<DaySummary>): List<DaySlice> {
+        val byKey = summaries.associateBy { it.dayKey }
+        return (6L downTo 0L).map { back ->
+            val key = LocalDate.now().minusDays(back).toString()
+            val summary = byKey[key]
+            if (summary == null) DaySlice(key, 0.0, 0.0, 0.0, 0.0, hasData = false)
+            else DaySlice(key, summary.calories, summary.proteinG, summary.carbsG, summary.fatG, hasData = true)
+        }
+    }
 
     suspend fun estimateMeal(description: String): GeminiResult {
         val key = settings.geminiApiKey
