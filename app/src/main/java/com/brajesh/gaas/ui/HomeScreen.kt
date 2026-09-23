@@ -85,25 +85,3 @@ private fun MacroRow(label: String, remaining: Double, goal: Double, unit: Strin
         )
     }
 }
-
-@Composable
-private fun MealRow(meal: MealEntry, onDelete: () -> Unit) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp)) {
-            Text(meal.rawText, style = MaterialTheme.typography.bodyLarge)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "${meal.calories.roundToInt()} kcal · P ${meal.proteinG.roundToInt()}g · " +
-                    "C ${meal.carbsG.roundToInt()}g · F ${meal.fatG.roundToInt()}g",
-                style = MaterialTheme.typography.bodySmall
-            )
-            meal.estimateNote?.let {
-                Spacer(Modifier.height(4.dp))
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-            }
-            TextButton(onClick = onDelete, modifier = Modifier.align(androidx.compose.ui.Alignment.End)) {
-                Text("Remove")
-            }
-        }
-    }
-}
