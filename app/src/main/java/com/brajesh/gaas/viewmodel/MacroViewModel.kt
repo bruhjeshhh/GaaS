@@ -46,6 +46,10 @@ class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
     private val _goal = MutableStateFlow(repo.goal())
     val goal: StateFlow<MacroGoal?> = _goal
 
+    /** The user's Gemini key, kept in sync so Settings can pre-fill. */
+    private val _apiKey = MutableStateFlow(repo.apiKey())
+    val apiKey: StateFlow<String?> = _apiKey
+
     /** Per-day totals for the history list, newest first — powered by the GROUP BY query. */
     val historyDays: StateFlow<List<DaySummary>> =
         repo.daySummaries().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -74,11 +78,20 @@ class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
     fun completeOnboarding(apiKey: String, goal: MacroGoal) {
         repo.setApiKey(apiKey)
         repo.setGoal(goal)
+        _apiKey.value = apiKey.trim()
         _goal.value = goal
     }
 
     fun updateGoal(goal: MacroGoal) {
         repo.setGoal(goal)
+        _goal.value = goal
+    }
+
+    /** Persists edits made on the Settings screen (API key + goal in one write). */
+    fun saveSettings(apiKey: String, goal: MacroGoal) {
+        repo.setApiKey(apiKey)
+        repo.setGoal(goal)
+        _apiKey.value = apiKey.trim()
         _goal.value = goal
     }
 
