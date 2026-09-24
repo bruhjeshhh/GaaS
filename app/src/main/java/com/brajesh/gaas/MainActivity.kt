@@ -20,6 +20,7 @@ import com.brajesh.gaas.ui.DayDetailScreen
 import com.brajesh.gaas.ui.HistoryScreen
 import com.brajesh.gaas.ui.HomeScreen
 import com.brajesh.gaas.ui.OnboardingScreen
+import com.brajesh.gaas.ui.SettingsScreen
 import com.brajesh.gaas.viewmodel.MacroViewModel
 
 private sealed interface Screen {
@@ -27,6 +28,7 @@ private sealed interface Screen {
     data object AddMeal : Screen
     data object History : Screen
     data class DayDetail(val dayKey: String) : Screen
+    data object Settings : Screen
 }
 
 class MainActivity : ComponentActivity() {
@@ -59,7 +61,8 @@ class MainActivity : ComponentActivity() {
                                     meals = meals,
                                     onAddMeal = { screen = Screen.AddMeal },
                                     onDeleteMeal = { viewModel.deleteMeal(it) },
-                                    onOpenHistory = { screen = Screen.History }
+                                    onOpenHistory = { screen = Screen.History },
+                                    onOpenSettings = { screen = Screen.Settings }
                                 )
                             }
                             Screen.AddMeal -> {
@@ -104,6 +107,19 @@ class MainActivity : ComponentActivity() {
                                         viewModel.selectDay(null)
                                         screen = Screen.History
                                     }
+                                )
+                            }
+                            Screen.Settings -> {
+                                val apiKey by viewModel.apiKey.collectAsState()
+                                val goal by viewModel.goal.collectAsState()
+                                SettingsScreen(
+                                    apiKey = apiKey.orEmpty(),
+                                    goal = goal,
+                                    onSave = { key, newGoal ->
+                                        viewModel.saveSettings(key, newGoal)
+                                        screen = Screen.Home
+                                    },
+                                    onBack = { screen = Screen.Home }
                                 )
                             }
                         }

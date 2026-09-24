@@ -36,7 +36,8 @@ fun HomeScreen(
     meals: List<MealEntry>,
     onAddMeal: () -> Unit,
     onDeleteMeal: (MealEntry) -> Unit,
-    onOpenHistory: () -> Unit
+    onOpenHistory: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -44,6 +45,7 @@ fun HomeScreen(
                 title = { Text("Today") },
                 actions = {
                     TextButton(onClick = onOpenHistory) { Text("History") }
+                    TextButton(onClick = onOpenSettings) { Text("Settings") }
                 }
             )
         },
