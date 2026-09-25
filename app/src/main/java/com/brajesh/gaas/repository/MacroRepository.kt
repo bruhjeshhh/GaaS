@@ -5,6 +5,7 @@ import com.brajesh.gaas.data.MacroGoal
 import com.brajesh.gaas.data.MealDao
 import com.brajesh.gaas.data.MealEntry
 import com.brajesh.gaas.data.SettingsStore
+import com.brajesh.gaas.data.ThemeMode
 import com.brajesh.gaas.network.GeminiClient
 import com.brajesh.gaas.network.GeminiResult
 import com.brajesh.gaas.network.ParsedMeal
@@ -57,6 +58,8 @@ class MacroRepository(
     fun setGoal(goal: MacroGoal) { settings.goal = goal }
     fun apiKey(): String? = settings.geminiApiKey
     fun setApiKey(key: String) { settings.geminiApiKey = key.trim() }
+    fun themeMode(): ThemeMode = settings.themeMode
+    fun setThemeMode(mode: ThemeMode) { settings.themeMode = mode }
     val isOnboarded: Boolean get() = settings.isOnboarded
 
     fun mealsForDay(dayKey: String): Flow<List<MealEntry>> = dao.mealsForDay(dayKey)

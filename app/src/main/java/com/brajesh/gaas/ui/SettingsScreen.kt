@@ -2,6 +2,7 @@ package com.brajesh.gaas.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -29,18 +31,22 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.brajesh.gaas.data.MacroGoal
+import com.brajesh.gaas.data.ThemeMode
 
 /**
- * Post-onboarding settings: edit the Gemini API key and the daily goal without
- * going through first-launch setup again. Values pre-fill from the current
- * saved settings; a blank calorie goal (or empty key) disables saving, same
- * rule as onboarding.
+ * Post-onboarding settings: appearance, the Gemini API key, and the daily goal
+ * without going through first-launch setup again. Key/goal values pre-fill from
+ * the current saved settings and are committed by the button; the theme picker
+ * applies and persists the moment you tap it. A blank calorie goal (or empty
+ * key) disables saving, same rule as onboarding.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     apiKey: String,
     goal: MacroGoal?,
+    themeMode: ThemeMode,
+    onThemeChange: (ThemeMode) -> Unit,
     onSave: (apiKey: String, goal: MacroGoal) -> Unit,
     onBack: () -> Unit
 ) {
@@ -68,11 +74,30 @@ fun SettingsScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text("Appearance", style = MaterialTheme.typography.titleMedium)
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ThemeMode.entries.forEach { mode ->
+                    FilterChip(
+                        selected = mode == themeMode,
+                        onClick = { onThemeChange(mode) },
+                        label = { Text(mode.label) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
             Text(
-                "Changes apply immediately — rings, history, and the running goal all " +
-                    "re-read from these once saved.",
-                style = MaterialTheme.typography.bodyMedium
+                "System follows your phone's dark-mode setting.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
             )
+
+            Divider()
+            Text("Gemini API key", style = MaterialTheme.typography.titleMedium)
 
             OutlinedTextField(
                 value = key,
@@ -109,6 +134,12 @@ fun SettingsScreen(
                 label = { Text("Fat (g)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true, modifier = Modifier.fillMaxWidth()
+            )
+
+            Text(
+                "Rings, history, and the running goal all re-read from these once saved.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
             )
 
             OutlinedButton(

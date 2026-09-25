@@ -1,3 +1,10 @@
 <resources>
-    <style name="Theme.GaaS" parent="android:Theme.Material.Light.NoActionBar" />
+    <!--
+      Platform theme only: it owns the window background seen before Compose
+      draws (launch/splash), so it must track the OS dark setting to avoid a
+      white flash on a dark phone. Actual app colors live in ui/theme/Theme.kt.
+    -->
+    <style name="Theme.GaaS" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/gaas_window_background</item>
+    </style>
 </resources>

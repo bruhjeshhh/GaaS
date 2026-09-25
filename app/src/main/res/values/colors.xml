@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#2E7D32</color>
+    <color name="ic_launcher_background">#00696B</color>
+    <!-- Matches LightColors.background in ui/theme/Theme.kt. -->
+    <color name="gaas_window_background">#FAFDFC</color>
 </resources>

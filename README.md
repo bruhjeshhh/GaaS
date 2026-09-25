@@ -15,6 +15,8 @@ just typed.
   note explaining what was guessed; rephrase or discard if it's off.
 - **Daily goals & remaining macros** — set calorie/protein/carb/fat targets and
   track today's progress on the home screen.
+- **Light & dark** — a calm teal palette that follows your phone's dark-mode
+  setting, or pin Light/Dark in Settings. No white flash on launch either way.
 - **On-device & private** — API key and goals live in `EncryptedSharedPreferences`,
   meals persist in Room. No accounts, no servers, no sharing.
 - **Runs on `gemini-3.5-flash-lite`** (Gemini free tier ≈ 500 requests/day),

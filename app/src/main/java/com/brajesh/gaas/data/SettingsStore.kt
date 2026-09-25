@@ -13,7 +13,7 @@ data class MacroGoal(
 )
 
 /**
- * Holds the Gemini API key and the user's daily macro goal.
+ * Holds the Gemini API key, the user's daily macro goal, and the theme choice.
  * Backed by EncryptedSharedPreferences rather than plain SharedPreferences —
  * the key is still extractable on a rooted/decompiled device, but this at
  * least keeps it off disk in plaintext and out of a routine backup dump.
@@ -68,11 +68,22 @@ class SettingsStore(context: Context) {
     val isOnboarded: Boolean
         get() = geminiApiKey != null && goal != null
 
+    /**
+     * Light/dark/system preference. Anything unreadable or written by a newer
+     * build falls back to SYSTEM so a bad value can never brick startup.
+     */
+    var themeMode: ThemeMode
+        get() = prefs.getString(KEY_THEME_MODE, null)
+            ?.let { stored -> ThemeMode.entries.firstOrNull { it.name == stored } }
+            ?: ThemeMode.SYSTEM
+        set(value) = prefs.edit().putString(KEY_THEME_MODE, value.name).apply()
+
     companion object {
         private const val KEY_API_KEY = "gemini_api_key"
         private const val KEY_GOAL_CAL = "goal_cal"
         private const val KEY_GOAL_PROTEIN = "goal_protein"
         private const val KEY_GOAL_CARBS = "goal_carbs"
         private const val KEY_GOAL_FAT = "goal_fat"
+        private const val KEY_THEME_MODE = "theme_mode"
     }
 }

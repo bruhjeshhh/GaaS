@@ -21,6 +21,7 @@ import com.brajesh.gaas.ui.HistoryScreen
 import com.brajesh.gaas.ui.HomeScreen
 import com.brajesh.gaas.ui.OnboardingScreen
 import com.brajesh.gaas.ui.SettingsScreen
+import com.brajesh.gaas.ui.theme.GaaSTheme
 import com.brajesh.gaas.viewmodel.MacroViewModel
 
 private sealed interface Screen {
@@ -40,9 +41,11 @@ class MainActivity : ComponentActivity() {
         val repo = MacroRepository(dao, settings)
 
         setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier) {
-                    val viewModel: MacroViewModel = viewModel(factory = MacroViewModel.Factory(repo))
+            val viewModel: MacroViewModel = viewModel(factory = MacroViewModel.Factory(repo))
+            val themeMode by viewModel.themeMode.collectAsState()
+
+            GaaSTheme(themeMode) {
+                Surface(modifier = Modifier, color = MaterialTheme.colorScheme.background) {
                     var onboarded by remember { mutableStateOf(repo.isOnboarded) }
                     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
 
@@ -115,6 +118,8 @@ class MainActivity : ComponentActivity() {
                                 SettingsScreen(
                                     apiKey = apiKey.orEmpty(),
                                     goal = goal,
+                                    themeMode = themeMode,
+                                    onThemeChange = viewModel::setThemeMode,
                                     onSave = { key, newGoal ->
                                         viewModel.saveSettings(key, newGoal)
                                         screen = Screen.Home

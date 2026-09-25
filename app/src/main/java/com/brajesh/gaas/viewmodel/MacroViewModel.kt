@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.brajesh.gaas.data.DaySummary
 import com.brajesh.gaas.data.MacroGoal
 import com.brajesh.gaas.data.MealEntry
+import com.brajesh.gaas.data.ThemeMode
 import com.brajesh.gaas.network.GeminiResult
 import com.brajesh.gaas.network.ParsedMeal
 import com.brajesh.gaas.repository.DaySlice
@@ -50,6 +51,13 @@ class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
     private val _apiKey = MutableStateFlow(repo.apiKey())
     val apiKey: StateFlow<String?> = _apiKey
 
+    /**
+     * Light/dark/system choice. Seeded before the first composition so the app
+     * never paints a frame in the wrong theme on launch.
+     */
+    private val _themeMode = MutableStateFlow(repo.themeMode())
+    val themeMode: StateFlow<ThemeMode> = _themeMode
+
     /** Per-day totals for the history list, newest first — powered by the GROUP BY query. */
     val historyDays: StateFlow<List<DaySummary>> =
         repo.daySummaries().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -93,6 +101,16 @@ class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
         repo.setGoal(goal)
         _apiKey.value = apiKey.trim()
         _goal.value = goal
+    }
+
+    /**
+     * Applies a theme choice right away and persists it — the switch is
+     * deliberately not part of the Settings "Save changes" button, since
+     * re-tinting the app is the feedback the user is looking for.
+     */
+    fun setThemeMode(mode: ThemeMode) {
+        repo.setThemeMode(mode)
+        _themeMode.value = mode
     }
 
     /** Sends the verbose meal description to Gemini and stages the result for user confirmation. */
