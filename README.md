@@ -24,11 +24,11 @@ just typed.
 
 ## Install
 
-The current stable build is **GaaS 1.0.0**:
+The current stable build is **GaaS 1.3.0**:
 
 1. On your phone's browser, open the release page:
-   https://github.com/bruhjeshhh/GaaS/releases/tag/v1.0.0
-2. Download **GaaS-1.0.0.apk** and tap it. Android will warn about installing
+   https://github.com/bruhjeshhh/GaaS/releases/tag/v1.3.0
+2. Download **GaaS-1.3.0.apk** and tap it. Android will warn about installing
    from unknown sources — allow it for your browser (Settings → "Install
    unknown apps").
 3. Open GaaS. First launch asks for a Gemini API key (free at
