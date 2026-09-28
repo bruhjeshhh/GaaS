@@ -60,6 +60,8 @@ class MacroRepository(
     fun setApiKey(key: String) { settings.geminiApiKey = key.trim() }
     fun themeMode(): ThemeMode = settings.themeMode
     fun setThemeMode(mode: ThemeMode) { settings.themeMode = mode }
+    fun dismissedUpdateVersion(): String? = settings.dismissedUpdateVersion
+    fun setDismissedUpdateVersion(version: String?) { settings.dismissedUpdateVersion = version }
     val isOnboarded: Boolean get() = settings.isOnboarded
 
     fun mealsForDay(dayKey: String): Flow<List<MealEntry>> = dao.mealsForDay(dayKey)
