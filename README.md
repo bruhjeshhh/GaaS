@@ -17,6 +17,9 @@ just typed.
   track today's progress on the home screen.
 - **Light & dark** — a calm teal palette that follows your phone's dark-mode
   setting, or pin Light/Dark in Settings. No white flash on launch either way.
+- **Tells you when a new version lands** — checks GitHub for a newer tagged
+  release once per launch and offers a one-tap link to it. Dismissible, and it
+  only ever nags about the version you're actually behind.
 - **On-device & private** — API key and goals live in `EncryptedSharedPreferences`,
   meals persist in Room. No accounts, no servers, no sharing.
 - **Runs on `gemini-3.5-flash-lite`** (Gemini free tier ≈ 500 requests/day),
@@ -62,12 +65,18 @@ The first Gradle run pulls Compose, Room, OkHttp, and kotlinx.serialization.
    can catch bad guesses (`MacroViewModel.kt`).
 4. **Home screen**: today's meals and remaining macros, computed by summing
    Room-stored entries (`MealEntry.kt`) against the goal.
+5. **Update check**: `UpdateChecker.kt` reads the repo's GitHub releases once per
+   launch and compares the newest `v*` tag against the installed
+   `BuildConfig.VERSION_NAME`. It deliberately ignores the rolling `debug-build`
+   release, which is not marked as a prerelease and would otherwise always look
+   like the newest thing on the repo.
 
 ### Tech stack
 
 Kotlin + Jetpack Compose (Material 3), lifecycle-compose + navigation,
 Room (KSP), OkHttp, kotlinx-serialization, androidx.security
-EncryptedSharedPreferences.
+EncryptedSharedPreferences. Targets **API 36** (Android 16) and is edge-to-edge,
+so it satisfies Google Play's target-SDK floor as of 2026-08-31.
 
 ### Project layout
 
@@ -75,7 +84,9 @@ EncryptedSharedPreferences.
 app/src/main/java/com/brajesh/gaas/
 ├── MainActivity.kt          App entry / navigation host
 ├── ui/                      Compose screens (Onboarding, Home, AddMeal summary)
+├── ui/theme/Theme.kt        Light/dark palette, theme + system-bar handling
 ├── network/GeminiClient.kt  Gemini API call + tolerant JSON parsing
+├── network/UpdateChecker.kt GitHub release lookup for the update banner
 ├── viewmodel/MacroViewModel.kt  UI state + estimation flow
 ├── repository/MacroRepository.kt  Bridge between Room and screens
 └── data/                    Room DB (MealEntry, MealDao) + SettingsStore
@@ -93,6 +104,12 @@ publishes a stable release with a `GaaS-1.1.0.apk` asset.
   the nav graph).
 - History/trends beyond "today" — `MealDao.allMeals()` and `allDays()` are ready
   to build on.
+- Distribution is GitHub releases + a sideloaded APK. If non-technical users ever
+  need it, the app is already API 36 and edge-to-edge, so the Play Store route is
+  open: $25 once, an AAB with Play App Signing, a hosted privacy policy, and a
+  Data Safety form disclosing that meal text is sent to Google. A personal
+  developer account created after 2023-11-13 also needs 12 opted-in closed
+  testers for 14 days before production — internal testing skips that.
 - The API key is stored encrypted but is still extractable on a rooted device.
   If this ever gets real users, custody should move server-side.
 
