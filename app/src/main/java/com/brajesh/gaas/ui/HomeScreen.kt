@@ -12,20 +12,23 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.brajesh.gaas.data.MealEntry
+import com.brajesh.gaas.network.UpdateState
 import com.brajesh.gaas.repository.DayTotals
 import kotlin.math.roundToInt
 
@@ -34,6 +37,9 @@ import kotlin.math.roundToInt
 fun HomeScreen(
     totals: DayTotals,
     meals: List<MealEntry>,
+    updateState: UpdateState,
+    onGetUpdate: (String) -> Unit,
+    onDismissUpdate: () -> Unit,
     onAddMeal: () -> Unit,
     onDeleteMeal: (MealEntry) -> Unit,
     onOpenHistory: () -> Unit,
@@ -44,13 +50,21 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Today") },
                 actions = {
-                    TextButton(onClick = onOpenHistory) { Text("History") }
-                    TextButton(onClick = onOpenSettings) { Text("Settings") }
+                    IconButton(onClick = onOpenHistory) {
+                        Icon(Icons.Default.DateRange, contentDescription = "History")
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddMeal) { Icon(Icons.Default.Add, contentDescription = "Log meal") }
+            ExtendedFloatingActionButton(
+                onClick = onAddMeal,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Log meal") }
+            )
         }
     ) { padding ->
         LazyColumn(
@@ -60,17 +74,19 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item { Spacer(Modifier.height(8.dp)) }
-            item { ProgressCard(totals) }
-            item {
-                Text(
-                    "Logged today",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
-                )
+            item { Spacer(Modifier.height(4.dp)) }
+            val update = updateState as? UpdateState.Available
+            if (update != null && !update.dismissed) {
+                item {
+                    UpdateBanner(update = update, onGetIt = onGetUpdate, onDismiss = onDismissUpdate)
+                }
             }
+            item { ProgressCard(totals) }
+            item { SectionHeader("Logged today") }
             if (meals.isEmpty()) {
-                item { Text("Nothing logged yet — tap + to add a meal.", style = MaterialTheme.typography.bodyMedium) }
+                item {
+                    EmptyState("Nothing logged yet — tap \"Log meal\" to add your first meal.")
+                }
             }
             items(meals.reversed()) { meal ->
                 MealRow(meal, onDelete = { onDeleteMeal(meal) })
@@ -98,13 +114,17 @@ private fun ProgressCard(totals: DayTotals) {
                 if (totals.goal != null) {
                     Text(
                         "${totals.consumedCalories.roundToInt()} / ${totals.goal.calories.roundToInt()} kcal",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.outline
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             if (totals.goal == null) {
-                Text("No goal set yet.")
+                Text(
+                    "No goal set yet — add one in Settings to track progress.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             } else {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     MacroRing("Calories", totals.consumedCalories, totals.goal.calories, "kcal", Modifier.weight(1f))

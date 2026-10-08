@@ -84,12 +84,16 @@ fun MacroRing(
             )
         }
         Spacer(Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         Text(
             text = when {
                 !hasGoal -> "no goal"
-                over -> "over by ${(consumed - goal).roundToInt()}$unit"
-                else -> "${(goal - consumed).roundToInt()}$unit left"
+                over -> "over by ${(consumed - goal).roundToInt()} $unit"
+                else -> "${(goal - consumed).roundToInt()} $unit left"
             },
             style = MaterialTheme.typography.labelSmall,
             color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,

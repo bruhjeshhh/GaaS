@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -21,58 +22,92 @@ fun OnboardingScreen(onComplete: (apiKey: String, goal: MacroGoal) -> Unit) {
     var fat by remember { mutableStateOf("") }
 
     val canSubmit = apiKey.isNotBlank() && calories.toDoubleOrNull() != null
+    val uriHandler = LocalUriHandler.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            // The only screen without a Scaffold, so it has to inset itself.
+            // safeDrawing covers the status/navigation bars and the keyboard.
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Set up GaaS", style = MaterialTheme.typography.headlineSmall)
-        Text(
-            "This app estimates macros from what you type using your own Gemini API " +
-                "key — nothing is sent to any server but Google's. Get a free key at " +
-                "aistudio.google.com/apikey.",
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Set up GaaS", style = MaterialTheme.typography.headlineSmall)
+            Text(
+                "Describe meals in your own words — GaaS estimates the macros using " +
+                    "your own Gemini API key. Nothing leaves your phone except the meal " +
+                    "description sent to Google.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
-        OutlinedTextField(
-            value = apiKey,
-            onValueChange = { apiKey = it },
-            label = { Text("Gemini API key") },
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
+        ElevatedCard(Modifier.fillMaxWidth()) {
+            Column(
+                Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Gemini API key", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = apiKey,
+                    onValueChange = { apiKey = it },
+                    label = { Text("Gemini API key") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    "Your key is stored on this device only (encrypted).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                TextButton(onClick = { uriHandler.openUri("https://aistudio.google.com/apikey") }) {
+                    Text("Get a free key at AI Studio")
+                }
+            }
+        }
 
-        Divider()
-        Text("Daily macro goal", style = MaterialTheme.typography.titleMedium)
-
-        OutlinedTextField(
-            value = calories, onValueChange = { calories = it },
-            label = { Text("Calories") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true, modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = protein, onValueChange = { protein = it },
-            label = { Text("Protein (g)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true, modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = carbs, onValueChange = { carbs = it },
-            label = { Text("Carbs (g)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true, modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = fat, onValueChange = { fat = it },
-            label = { Text("Fat (g)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true, modifier = Modifier.fillMaxWidth()
-        )
+        ElevatedCard(Modifier.fillMaxWidth()) {
+            Column(
+                Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Daily macro goal", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = calories, onValueChange = { calories = it },
+                    label = { Text("Calories") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true, modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = protein, onValueChange = { protein = it },
+                    label = { Text("Protein (g)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true, modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = carbs, onValueChange = { carbs = it },
+                    label = { Text("Carbs (g)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true, modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = fat, onValueChange = { fat = it },
+                    label = { Text("Fat (g)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true, modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    "Macro fields left blank stay 0g and show as \"no goal\". " +
+                        "You can change these any time in Settings.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
 
         Button(
             onClick = {
@@ -91,5 +126,7 @@ fun OnboardingScreen(onComplete: (apiKey: String, goal: MacroGoal) -> Unit) {
         ) {
             Text("Start tracking")
         }
+
+        Spacer(Modifier.height(8.dp))
     }
 }

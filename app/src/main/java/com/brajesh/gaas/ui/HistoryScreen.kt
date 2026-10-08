@@ -12,12 +12,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.brajesh.gaas.data.DaySummary
@@ -43,7 +44,7 @@ fun HistoryScreen(
         topBar = {
             TopAppBar(
                 title = { Text("History") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } }
+                navigationIcon = { BackArrow(onBack) }
             )
         }
     ) { padding ->
@@ -54,21 +55,12 @@ fun HistoryScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item { Spacer(Modifier.height(8.dp)) }
+            item { Spacer(Modifier.height(4.dp)) }
             item { WeeklyChart(slices = weekly, goal = goal) }
-            item {
-                Text(
-                    "Past days",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
-                )
-            }
+            item { SectionHeader("Past days") }
             if (days.isEmpty()) {
                 item {
-                    Text(
-                        "Nothing logged yet — days will show up here as you track meals.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    EmptyState("Nothing logged yet — days will show up here as you track meals.")
                 }
             }
             items(days) { summary ->
@@ -84,25 +76,43 @@ private fun DayRow(summary: DaySummary, goal: MacroGoal?, onClick: () -> Unit) {
     val hasGoal = goal != null && goal.calories > 0
     val goalCal = goal?.calories ?: 0.0
     val over = hasGoal && summary.calories > goalCal
+    val fraction = if (hasGoal) (summary.calories / goalCal).coerceIn(0.0, 1.0).toFloat() else 0f
 
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(formatDayLabel(summary.dayKey), style = MaterialTheme.typography.titleMedium)
-            val calPart = if (hasGoal) {
-                "${summary.calories.roundToInt()} / ${goalCal.roundToInt()} kcal"
-            } else {
-                "${summary.calories.roundToInt()} kcal"
-            }
-            val statusPart = when {
-                over -> "over by ${(summary.calories - goalCal).roundToInt()} kcal"
-                hasGoal -> "${(goalCal - summary.calories).roundToInt()} kcal left"
-                else -> ""
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(formatDayLabel(summary.dayKey), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = if (hasGoal) {
+                        "${summary.calories.roundToInt()} / ${goalCal.roundToInt()} kcal"
+                    } else {
+                        "${summary.calories.roundToInt()} kcal"
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                )
             }
             Text(
-                if (statusPart.isEmpty()) calPart else "$calPart · $statusPart",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                text = when {
+                    over -> "Over by ${(summary.calories - goalCal).roundToInt()} kcal"
+                    hasGoal -> "${(goalCal - summary.calories).roundToInt()} kcal left"
+                    else -> "No goal set"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline
             )
+            if (hasGoal) {
+                LinearProgressIndicator(
+                    progress = { fraction },
+                    color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Text(
                 "P ${summary.proteinG.roundToInt()}g · C ${summary.carbsG.roundToInt()}g · F ${summary.fatG.roundToInt()}g",
                 style = MaterialTheme.typography.bodySmall,
@@ -125,7 +135,7 @@ fun DayDetailScreen(
         topBar = {
             TopAppBar(
                 title = { Text(formatDayLabel(dayKey)) },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } }
+                navigationIcon = { BackArrow(onBack) }
             )
         }
     ) { padding ->
@@ -136,17 +146,11 @@ fun DayDetailScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item { Spacer(Modifier.height(8.dp)) }
+            item { Spacer(Modifier.height(4.dp)) }
             item { DayTotalsCard(goal = goal, meals = meals) }
-            item {
-                Text(
-                    "Meals",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
-                )
-            }
+            item { SectionHeader("Meals") }
             if (meals.isEmpty()) {
-                item { Text("No meals logged this day.", style = MaterialTheme.typography.bodyMedium) }
+                item { EmptyState("No meals logged this day.") }
             }
             items(meals) { meal ->
                 MealRow(meal)
@@ -166,7 +170,11 @@ private fun DayTotalsCard(goal: MacroGoal?, meals: List<MealEntry>) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             if (goal == null) {
-                Text("No goal set for this day.")
+                Text(
+                    "No goal set for this day.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             } else {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     MacroRing("Calories", consumedCalories, goal.calories, "kcal", Modifier.weight(1f))

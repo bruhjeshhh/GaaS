@@ -1,8 +1,11 @@
 package com.brajesh.gaas.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.brajesh.gaas.viewmodel.PendingEstimate
@@ -20,21 +23,27 @@ fun AddMealScreen(
     var text by remember { mutableStateOf("") }
 
     Scaffold(topBar = {
-        TopAppBar(title = { Text("Log a meal") }, navigationIcon = {
-            TextButton(onClick = onBack) { Text("Back") }
-        })
+        TopAppBar(
+            title = { Text("Log a meal") },
+            navigationIcon = { BackArrow(onBack) }
+        )
     }) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                // Edge-to-edge: the keyboard no longer resizes the window, and
+                // the review card's "Log it" button has to stay reachable.
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 "Describe what you ate, as loosely as you like — quantities, homemade " +
                     "stuff, \"a little of this and that\" is fine.",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             OutlinedTextField(
@@ -55,11 +64,26 @@ fun AddMealScreen(
             }
 
             when (pending) {
-                is PendingEstimate.Loading -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                is PendingEstimate.Failed -> Text(
-                    pending.message,
-                    color = MaterialTheme.colorScheme.error
-                )
+                is PendingEstimate.Loading -> {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    Text(
+                        "Asking Gemini for an estimate…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                is PendingEstimate.Failed -> Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        pending.message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
                 is PendingEstimate.Ready -> ReviewCard(pending, onConfirm, onDiscard)
                 PendingEstimate.Idle -> {}
             }
@@ -71,24 +95,66 @@ fun AddMealScreen(
 private fun ReviewCard(ready: PendingEstimate.Ready, onConfirm: () -> Unit, onDiscard: () -> Unit) {
     val meal = ready.parsed
     ElevatedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Estimated", style = MaterialTheme.typography.titleMedium)
-            meal.items.forEach { item ->
-                Text("• ${item.name} (${item.quantity}) — ${item.calories.roundToInt()} kcal")
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Review before saving", style = MaterialTheme.typography.titleMedium)
+
+            Column {
+                meal.items.forEachIndexed { index, item ->
+                    if (index > 0) HorizontalDivider()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(item.name, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                item.quantity,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "${item.calories.roundToInt()} kcal",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "Total: ${meal.totalCalories.roundToInt()} kcal · " +
+
+            HorizontalDivider()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "${meal.totalCalories.roundToInt()} kcal",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
                     "P ${meal.totalProteinG.roundToInt()}g · " +
-                    "C ${meal.totalCarbsG.roundToInt()}g · " +
-                    "F ${meal.totalFatG.roundToInt()}g",
-                style = MaterialTheme.typography.bodyMedium
-            )
+                        "C ${meal.totalCarbsG.roundToInt()}g · " +
+                        "F ${meal.totalFatG.roundToInt()}g",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             Text(
                 meal.assumptionsNote,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )
+
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = onDiscard, modifier = Modifier.weight(1f)) { Text("Discard") }
                 Button(onClick = onConfirm, modifier = Modifier.weight(1f)) { Text("Log it") }

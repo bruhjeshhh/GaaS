@@ -1,16 +1,21 @@
 package com.brajesh.gaas
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.brajesh.gaas.data.AppDatabase
 import com.brajesh.gaas.data.SettingsStore
@@ -40,6 +45,11 @@ class MainActivity : ComponentActivity() {
         val dao = AppDatabase.get(applicationContext).mealDao()
         val repo = MacroRepository(dao, settings)
 
+        // targetSdk 36 enforces edge-to-edge, so ask for it explicitly and let
+        // the screens below handle their own insets. Icon contrast is then
+        // corrected per-theme inside GaaSTheme.
+        enableEdgeToEdge()
+
         setContent {
             val viewModel: MacroViewModel = viewModel(factory = MacroViewModel.Factory(repo))
             val themeMode by viewModel.themeMode.collectAsState()
@@ -55,13 +65,36 @@ class MainActivity : ComponentActivity() {
                             onboarded = true
                         })
                     } else {
+                        // The nav "stack" is a single state var, so system back has to be
+                        // unwound by hand — otherwise it exits the app from a sub-screen.
+                        // Mirrors what each screen's own Back button already does.
+                        BackHandler(enabled = screen != Screen.Home) {
+                            when (screen) {
+                                is Screen.AddMeal -> {
+                                    viewModel.discardPendingMeal()
+                                    screen = Screen.Home
+                                }
+                                is Screen.DayDetail -> {
+                                    viewModel.selectDay(null)
+                                    screen = Screen.History
+                                }
+                                else -> screen = Screen.Home
+                            }
+                        }
+
                         when (val current = screen) {
                             Screen.Home -> {
                                 val totals by viewModel.todayTotals.collectAsState()
                                 val meals by viewModel.todaysMeals.collectAsState()
+                                val updateState by viewModel.updateState.collectAsState()
+                                // Once per app launch; the ViewModel ignores repeats.
+                                LaunchedEffect(Unit) { viewModel.checkForUpdate() }
                                 HomeScreen(
                                     totals = totals,
                                     meals = meals,
+                                    updateState = updateState,
+                                    onGetUpdate = ::openRelease,
+                                    onDismissUpdate = viewModel::dismissUpdate,
                                     onAddMeal = { screen = Screen.AddMeal },
                                     onDeleteMeal = { viewModel.deleteMeal(it) },
                                     onOpenHistory = { screen = Screen.History },
@@ -115,11 +148,16 @@ class MainActivity : ComponentActivity() {
                             Screen.Settings -> {
                                 val apiKey by viewModel.apiKey.collectAsState()
                                 val goal by viewModel.goal.collectAsState()
+                                val updateState by viewModel.updateState.collectAsState()
                                 SettingsScreen(
                                     apiKey = apiKey.orEmpty(),
                                     goal = goal,
                                     themeMode = themeMode,
+                                    updateState = updateState,
+                                    appVersion = BuildConfig.VERSION_NAME,
                                     onThemeChange = viewModel::setThemeMode,
+                                    onCheckForUpdate = { viewModel.checkForUpdate(force = true) },
+                                    onOpenRelease = ::openRelease,
                                     onSave = { key, newGoal ->
                                         viewModel.saveSettings(key, newGoal)
                                         screen = Screen.Home
@@ -132,5 +170,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /** Opens a GitHub release page in whatever browser the user has. */
+    private fun openRelease(url: String) {
+        startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
     }
 }
