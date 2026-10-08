@@ -3,12 +3,15 @@ package com.brajesh.gaas.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.brajesh.gaas.BuildConfig
 import com.brajesh.gaas.data.DaySummary
 import com.brajesh.gaas.data.MacroGoal
 import com.brajesh.gaas.data.MealEntry
 import com.brajesh.gaas.data.ThemeMode
 import com.brajesh.gaas.network.GeminiResult
 import com.brajesh.gaas.network.ParsedMeal
+import com.brajesh.gaas.network.UpdateChecker
+import com.brajesh.gaas.network.UpdateState
 import com.brajesh.gaas.repository.DaySlice
 import com.brajesh.gaas.repository.DayTotals
 import com.brajesh.gaas.repository.MacroRepository
@@ -111,6 +114,39 @@ class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
     fun setThemeMode(mode: ThemeMode) {
         repo.setThemeMode(mode)
         _themeMode.value = mode
+    }
+
+    /**
+     * Result of the last release check against GitHub. [hasCheckedOnce] keeps
+     * the automatic check to one request per app launch — a manual check from
+     * Settings passes force = true and ignores it.
+     */
+    private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    val updateState: StateFlow<UpdateState> = _updateState
+    private var hasCheckedOnce = false
+
+    fun checkForUpdate(force: Boolean = false) {
+        if (hasCheckedOnce && !force) return
+        hasCheckedOnce = true
+        _updateState.value = UpdateState.Checking
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                UpdateChecker(BuildConfig.VERSION_NAME).check()
+            }
+            val dismissed = repo.dismissedUpdateVersion()
+            _updateState.value = if (result is UpdateState.Available) {
+                result.copy(dismissed = result.version == dismissed)
+            } else {
+                result
+            }
+        }
+    }
+
+    /** Hides the Home banner for this version only; the next release re-shows it. */
+    fun dismissUpdate() {
+        val current = _updateState.value as? UpdateState.Available ?: return
+        repo.setDismissedUpdateVersion(current.version)
+        _updateState.value = current.copy(dismissed = true)
     }
 
     /** Sends the verbose meal description to Gemini and stages the result for user confirmation. */

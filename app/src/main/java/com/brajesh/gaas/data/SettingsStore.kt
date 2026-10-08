@@ -3,6 +3,7 @@ package com.brajesh.gaas.data
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.core.content.edit
 import androidx.security.crypto.MasterKey
 
 data class MacroGoal(
@@ -39,7 +40,7 @@ class SettingsStore(context: Context) {
 
     var geminiApiKey: String?
         get() = prefs.getString(KEY_API_KEY, null)
-        set(value) = prefs.edit().putString(KEY_API_KEY, value).apply()
+        set(value) = prefs.edit { putString(KEY_API_KEY, value) }
 
     var goal: MacroGoal?
         get() {
@@ -54,15 +55,15 @@ class SettingsStore(context: Context) {
         }
         set(value) {
             if (value == null) {
-                prefs.edit().remove(KEY_GOAL_CAL).apply()
+                prefs.edit { remove(KEY_GOAL_CAL) }
                 return
             }
-            prefs.edit()
-                .putFloat(KEY_GOAL_CAL, value.calories.toFloat())
-                .putFloat(KEY_GOAL_PROTEIN, value.proteinG.toFloat())
-                .putFloat(KEY_GOAL_CARBS, value.carbsG.toFloat())
-                .putFloat(KEY_GOAL_FAT, value.fatG.toFloat())
-                .apply()
+            prefs.edit {
+                putFloat(KEY_GOAL_CAL, value.calories.toFloat())
+                putFloat(KEY_GOAL_PROTEIN, value.proteinG.toFloat())
+                putFloat(KEY_GOAL_CARBS, value.carbsG.toFloat())
+                putFloat(KEY_GOAL_FAT, value.fatG.toFloat())
+            }
         }
 
     val isOnboarded: Boolean
@@ -76,7 +77,15 @@ class SettingsStore(context: Context) {
         get() = prefs.getString(KEY_THEME_MODE, null)
             ?.let { stored -> ThemeMode.entries.firstOrNull { it.name == stored } }
             ?: ThemeMode.SYSTEM
-        set(value) = prefs.edit().putString(KEY_THEME_MODE, value.name).apply()
+        set(value) = prefs.edit { putString(KEY_THEME_MODE, value.name) }
+
+    /**
+     * Version the user asked not to be reminded about again, so the update
+     * banner stays hidden until a *newer* one shows up.
+     */
+    var dismissedUpdateVersion: String?
+        get() = prefs.getString(KEY_DISMISSED_UPDATE, null)
+        set(value) = prefs.edit { putString(KEY_DISMISSED_UPDATE, value) }
 
     companion object {
         private const val KEY_API_KEY = "gemini_api_key"
@@ -85,5 +94,6 @@ class SettingsStore(context: Context) {
         private const val KEY_GOAL_CARBS = "goal_carbs"
         private const val KEY_GOAL_FAT = "goal_fat"
         private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_DISMISSED_UPDATE = "dismissed_update_version"
     }
 }

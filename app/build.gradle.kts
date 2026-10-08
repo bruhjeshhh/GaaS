@@ -7,12 +7,14 @@ plugins {
 
 android {
     namespace = "com.brajesh.gaas"
-    compileSdk = 34
+    // 36 is the floor for a Google Play submission as of 2026-08-31, and it
+    // also flips on enforced edge-to-edge — see MainActivity for the insets.
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.brajesh.gaas"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 2
         versionName = "1.3.0"
     }
@@ -32,6 +34,8 @@ android {
     }
     buildFeatures {
         compose = true
+        // Lets the app read its own VERSION_NAME for the update check.
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"

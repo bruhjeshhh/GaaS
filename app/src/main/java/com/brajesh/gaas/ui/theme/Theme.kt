@@ -11,7 +11,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.brajesh.gaas.data.ThemeMode
@@ -113,10 +112,11 @@ fun ThemeMode.isDark(): Boolean = when (this) {
 }
 
 /**
- * Hosts the app's [ColorScheme], and repaints the system bars to match. The
- * platform theme only knows about the *OS* dark setting, which is wrong twice
- * over: on a dark phone the launch window is white, and once the user pins a
- * theme here the bars have to follow the app, not the OS.
+ * Hosts the app's [ColorScheme] and keeps the system bar icon contrast in step
+ * with it. `enableEdgeToEdge()` only follows the *OS* dark setting, which is
+ * wrong the moment the user pins Light or Dark here. Bar backgrounds are no
+ * longer ours to set: on API 35+ the setters are deprecated no-ops because the
+ * bars are always transparent, and the app's own background draws behind them.
  */
 @Composable
 fun GaaSTheme(themeMode: ThemeMode, content: @Composable () -> Unit) {
@@ -127,9 +127,6 @@ fun GaaSTheme(themeMode: ThemeMode, content: @Composable () -> Unit) {
     if (!view.isInEditMode) {
         SideEffect {
             view.context.findActivity()?.let { activity ->
-                val barColor = colorScheme.surface.toArgb()
-                activity.window.statusBarColor = barColor
-                activity.window.navigationBarColor = barColor
                 WindowCompat.getInsetsController(activity.window, view).apply {
                     isAppearanceLightStatusBars = !darkTheme
                     isAppearanceLightNavigationBars = !darkTheme
