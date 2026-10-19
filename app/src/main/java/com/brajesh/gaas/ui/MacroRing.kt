@@ -1,5 +1,8 @@
 package com.brajesh.gaas.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -36,13 +41,25 @@ fun MacroRing(
 ) {
     val hasGoal = goal > 0
     val over = hasGoal && consumed > goal
-    val fraction = if (hasGoal) (consumed / goal).coerceIn(0.0, 1.0) else 0.0
+    val targetFraction = if (hasGoal) (consumed / goal).coerceIn(0.0, 1.0) else 0.0
     val accent = when {
         over -> MaterialTheme.colorScheme.error
         hasGoal -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.outlineVariant
     }
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
+
+    // Fill the ring from empty each time the value (or goal) changes, so logging
+    // a meal reads as the ring visibly growing rather than snapping to the new
+    // fill. Keyed on the target so a new meal restarts the sweep from the old cap.
+    val animatedFraction = remember { Animatable(0f) }
+    LaunchedEffect(targetFraction) {
+        animatedFraction.animateTo(
+            targetValue = targetFraction.toFloat(),
+            animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing)
+        )
+    }
+    val fraction = animatedFraction.value
 
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(64.dp)) {
@@ -64,7 +81,7 @@ fun MacroRing(
                     drawArc(
                         color = accent,
                         startAngle = -90f,
-                        sweepAngle = 360f * fraction.toFloat(),
+                        sweepAngle = 360f * fraction,
                         useCenter = false,
                         topLeft = arcTopLeft,
                         size = arcSize,

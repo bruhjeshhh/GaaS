@@ -1,5 +1,6 @@
 package com.brajesh.gaas.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,18 +22,25 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.brajesh.gaas.data.MealEntry
 import com.brajesh.gaas.network.UpdateState
 import com.brajesh.gaas.repository.DayTotals
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     totals: DayTotals,
@@ -42,10 +50,29 @@ fun HomeScreen(
     onDismissUpdate: () -> Unit,
     onAddMeal: () -> Unit,
     onDeleteMeal: (MealEntry) -> Unit,
+    onUndoDelete: (MealEntry) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Delete immediately, then offer an undo. Doing the write first keeps the
+    // list honest if the user ignores the snackbar; undo re-inserts the entry.
+    fun deleteWithUndo(meal: MealEntry) {
+        onDeleteMeal(meal)
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "Meal removed",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) onUndoDelete(meal)
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Today") },
@@ -88,8 +115,12 @@ fun HomeScreen(
                     EmptyState("Nothing logged yet — tap \"Log meal\" to add your first meal.")
                 }
             }
-            items(meals.reversed()) { meal ->
-                MealRow(meal, onDelete = { onDeleteMeal(meal) })
+            items(meals.reversed(), key = { it.id }) { meal ->
+                MealRow(
+                    meal,
+                    modifier = Modifier.animateItemPlacement(),
+                    onDelete = { deleteWithUndo(meal) }
+                )
             }
             item { Spacer(Modifier.height(80.dp)) }
         }

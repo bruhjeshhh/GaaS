@@ -107,6 +107,13 @@ class MacroRepository(
 
     suspend fun deleteMeal(entry: MealEntry) = dao.delete(entry)
 
+    /**
+     * Re-inserts a just-deleted meal for the undo action. `id` is re-assigned by
+     * Room (autoGenerate), so this is a fresh row with the same content and
+     * timestamp — the day's order/total come out identical.
+     */
+    suspend fun restoreMeal(entry: MealEntry) = dao.insert(entry.copy(id = 0))
+
     fun computeTotals(meals: List<MealEntry>): DayTotals = DayTotals(
         goal = goal(),
         consumedCalories = meals.sumOf { it.calories },

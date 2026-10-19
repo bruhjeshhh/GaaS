@@ -1,5 +1,6 @@
 package com.brajesh.gaas.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,7 +32,7 @@ import kotlin.math.roundToInt
  * History: weekly chart up top, then every logged day (newest first) as a row
  * showing that day's calories vs goal. Tapping a day opens its meal list.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HistoryScreen(
     days: List<DaySummary>,
@@ -63,8 +64,13 @@ fun HistoryScreen(
                     EmptyState("Nothing logged yet — days will show up here as you track meals.")
                 }
             }
-            items(days) { summary ->
-                DayRow(summary = summary, goal = goal, onClick = { onDayClick(summary.dayKey) })
+            items(days, key = { it.dayKey }) { summary ->
+                DayRow(
+                    summary = summary,
+                    goal = goal,
+                    onClick = { onDayClick(summary.dayKey) },
+                    modifier = Modifier.animateItemPlacement()
+                )
             }
             item { Spacer(Modifier.height(80.dp)) }
         }
@@ -72,13 +78,18 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun DayRow(summary: DaySummary, goal: MacroGoal?, onClick: () -> Unit) {
+private fun DayRow(
+    summary: DaySummary,
+    goal: MacroGoal?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val hasGoal = goal != null && goal.calories > 0
     val goalCal = goal?.calories ?: 0.0
     val over = hasGoal && summary.calories > goalCal
     val fraction = if (hasGoal) (summary.calories / goalCal).coerceIn(0.0, 1.0).toFloat() else 0f
 
-    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -123,7 +134,7 @@ private fun DayRow(summary: DaySummary, goal: MacroGoal?, onClick: () -> Unit) {
 }
 
 /** Read-only view of one day's meals, reached from the history list. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun DayDetailScreen(
     dayKey: String,
@@ -152,8 +163,8 @@ fun DayDetailScreen(
             if (meals.isEmpty()) {
                 item { EmptyState("No meals logged this day.") }
             }
-            items(meals) { meal ->
-                MealRow(meal)
+            items(meals, key = { it.id }) { meal ->
+                MealRow(meal, modifier = Modifier.animateItemPlacement())
             }
             item { Spacer(Modifier.height(80.dp)) }
         }

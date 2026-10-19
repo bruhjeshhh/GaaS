@@ -185,6 +185,9 @@ class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
 
     fun deleteMeal(entry: MealEntry) = viewModelScope.launch { repo.deleteMeal(entry) }
 
+    /** Puts a deleted meal back, for the Home snackbar's Undo action. */
+    fun restoreMeal(entry: MealEntry) = viewModelScope.launch { repo.restoreMeal(entry) }
+
     class Factory(private val repo: MacroRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = MacroViewModel(repo) as T

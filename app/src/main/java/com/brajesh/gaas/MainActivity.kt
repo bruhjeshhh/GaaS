@@ -6,6 +6,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
@@ -82,7 +90,25 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        when (val current = screen) {
+                        // Animate between screens: sub-screens slide in from the
+                        // right and back out to the right, Home cross-fades. The
+                        // direction is inferred from which screen we're on rather
+                        // than a real stack, since `screen` is a single state var.
+                        AnimatedContent(
+                            targetState = screen,
+                            transitionSpec = {
+                                val forward = targetState !is Screen.Home
+                                val enter = slideInHorizontally(tween(280)) { width ->
+                                    if (forward) width / 6 else -width / 6
+                                } + fadeIn(tween(280))
+                                val exit = slideOutHorizontally(tween(280)) { width ->
+                                    if (forward) -width / 6 else width / 6
+                                } + fadeOut(tween(280))
+                                (enter togetherWith exit).using(SizeTransform(clip = false))
+                            },
+                            label = "screen"
+                        ) { current ->
+                        when (current) {
                             Screen.Home -> {
                                 val totals by viewModel.todayTotals.collectAsState()
                                 val meals by viewModel.todaysMeals.collectAsState()
@@ -97,6 +123,7 @@ class MainActivity : ComponentActivity() {
                                     onDismissUpdate = viewModel::dismissUpdate,
                                     onAddMeal = { screen = Screen.AddMeal },
                                     onDeleteMeal = { viewModel.deleteMeal(it) },
+                                    onUndoDelete = { viewModel.restoreMeal(it) },
                                     onOpenHistory = { screen = Screen.History },
                                     onOpenSettings = { screen = Screen.Settings }
                                 )
@@ -165,6 +192,7 @@ class MainActivity : ComponentActivity() {
                                     onBack = { screen = Screen.Home }
                                 )
                             }
+                        }
                         }
                     }
                 }
