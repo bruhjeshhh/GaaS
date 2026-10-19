@@ -1,5 +1,11 @@
 package com.brajesh.gaas.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -60,7 +66,17 @@ fun AddMealScreen(
                 enabled = text.isNotBlank() && pending !is PendingEstimate.Loading,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (pending is PendingEstimate.Loading) "Estimating…" else "Estimate macros")
+                if (pending is PendingEstimate.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Estimating…")
+                } else {
+                    Text("Estimate macros")
+                }
             }
 
             when (pending) {
@@ -84,8 +100,18 @@ fun AddMealScreen(
                         modifier = Modifier.padding(12.dp)
                     )
                 }
-                is PendingEstimate.Ready -> ReviewCard(pending, onConfirm, onDiscard)
-                PendingEstimate.Idle -> {}
+                else -> {}
+            }
+
+            // Hoisted out of the `when` so the card also animates *out* when the
+            // estimate is discarded or logged, not just in.
+            val ready = pending as? PendingEstimate.Ready
+            AnimatedVisibility(
+                visible = ready != null,
+                enter = fadeIn(tween(250)) + expandVertically(tween(250)),
+                exit = fadeOut(tween(150)) + shrinkVertically(tween(150))
+            ) {
+                if (ready != null) ReviewCard(ready, onConfirm, onDiscard)
             }
         }
     }
