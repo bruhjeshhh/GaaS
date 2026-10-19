@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -61,7 +64,10 @@ fun HistoryScreen(
             item { SectionHeader("Past days") }
             if (days.isEmpty()) {
                 item {
-                    EmptyState("Nothing logged yet — days will show up here as you track meals.")
+                    EmptyState(
+                        text = "Nothing logged yet — days will show up here as you track meals.",
+                        icon = Icons.Default.DateRange
+                    )
                 }
             }
             items(days, key = { it.dayKey }) { summary ->
@@ -96,7 +102,16 @@ private fun DayRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(formatDayLabel(summary.dayKey), style = MaterialTheme.typography.titleMedium)
+                Column {
+                    Text(formatDayLabel(summary.dayKey), style = MaterialTheme.typography.titleMedium)
+                    formatRelativeDay(summary.dayKey).takeIf { it.isNotBlank() }?.let { relative ->
+                        Text(
+                            relative,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
                 Text(
                     text = if (hasGoal) {
                         "${summary.calories.roundToInt()} / ${goalCal.roundToInt()} kcal"
@@ -145,7 +160,7 @@ fun DayDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(formatDayLabel(dayKey)) },
+                title = { Text(formatLongDayLabel(dayKey), maxLines = 1) },
                 navigationIcon = { BackArrow(onBack) }
             )
         }
@@ -161,7 +176,7 @@ fun DayDetailScreen(
             item { DayTotalsCard(goal = goal, meals = meals) }
             item { SectionHeader("Meals") }
             if (meals.isEmpty()) {
-                item { EmptyState("No meals logged this day.") }
+                item { EmptyState("No meals logged this day.", icon = Icons.Default.List) }
             }
             items(meals, key = { it.id }) { meal ->
                 MealRow(meal, modifier = Modifier.animateItemPlacement())
