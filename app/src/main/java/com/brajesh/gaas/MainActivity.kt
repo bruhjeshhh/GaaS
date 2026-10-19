@@ -108,91 +108,91 @@ class MainActivity : ComponentActivity() {
                             },
                             label = "screen"
                         ) { current ->
-                        when (current) {
-                            Screen.Home -> {
-                                val totals by viewModel.todayTotals.collectAsState()
-                                val meals by viewModel.todaysMeals.collectAsState()
-                                val updateState by viewModel.updateState.collectAsState()
-                                // Once per app launch; the ViewModel ignores repeats.
-                                LaunchedEffect(Unit) { viewModel.checkForUpdate() }
-                                HomeScreen(
-                                    totals = totals,
-                                    meals = meals,
-                                    updateState = updateState,
-                                    onGetUpdate = ::openRelease,
-                                    onDismissUpdate = viewModel::dismissUpdate,
-                                    onAddMeal = { screen = Screen.AddMeal },
-                                    onDeleteMeal = { viewModel.deleteMeal(it) },
-                                    onUndoDelete = { viewModel.restoreMeal(it) },
-                                    onOpenHistory = { screen = Screen.History },
-                                    onOpenSettings = { screen = Screen.Settings }
-                                )
+                            when (current) {
+                                Screen.Home -> {
+                                    val totals by viewModel.todayTotals.collectAsState()
+                                    val meals by viewModel.todaysMeals.collectAsState()
+                                    val updateState by viewModel.updateState.collectAsState()
+                                    // Once per app launch; the ViewModel ignores repeats.
+                                    LaunchedEffect(Unit) { viewModel.checkForUpdate() }
+                                    HomeScreen(
+                                        totals = totals,
+                                        meals = meals,
+                                        updateState = updateState,
+                                        onGetUpdate = ::openRelease,
+                                        onDismissUpdate = viewModel::dismissUpdate,
+                                        onAddMeal = { screen = Screen.AddMeal },
+                                        onDeleteMeal = { viewModel.deleteMeal(it) },
+                                        onUndoDelete = { viewModel.restoreMeal(it) },
+                                        onOpenHistory = { screen = Screen.History },
+                                        onOpenSettings = { screen = Screen.Settings }
+                                    )
+                                }
+                                Screen.AddMeal -> {
+                                    val pending by viewModel.pendingEstimate.collectAsState()
+                                    AddMealScreen(
+                                        pending = pending,
+                                        onEstimate = { viewModel.estimateMeal(it) },
+                                        onConfirm = {
+                                            viewModel.confirmPendingMeal()
+                                            screen = Screen.Home
+                                        },
+                                        onDiscard = { viewModel.discardPendingMeal() },
+                                        onBack = {
+                                            viewModel.discardPendingMeal()
+                                            screen = Screen.Home
+                                        }
+                                    )
+                                }
+                                Screen.History -> {
+                                    val days by viewModel.historyDays.collectAsState()
+                                    val weekly by viewModel.weekly.collectAsState()
+                                    val goal by viewModel.goal.collectAsState()
+                                    HistoryScreen(
+                                        days = days,
+                                        goal = goal,
+                                        weekly = weekly,
+                                        onDayClick = { key ->
+                                            viewModel.selectDay(key)
+                                            screen = Screen.DayDetail(key)
+                                        },
+                                        onBack = { screen = Screen.Home }
+                                    )
+                                }
+                                is Screen.DayDetail -> {
+                                    val meals by viewModel.selectedDayMeals.collectAsState()
+                                    val goal by viewModel.goal.collectAsState()
+                                    DayDetailScreen(
+                                        dayKey = current.dayKey,
+                                        goal = goal,
+                                        meals = meals,
+                                        onBack = {
+                                            viewModel.selectDay(null)
+                                            screen = Screen.History
+                                        }
+                                    )
+                                }
+                                Screen.Settings -> {
+                                    val apiKey by viewModel.apiKey.collectAsState()
+                                    val goal by viewModel.goal.collectAsState()
+                                    val updateState by viewModel.updateState.collectAsState()
+                                    SettingsScreen(
+                                        apiKey = apiKey.orEmpty(),
+                                        goal = goal,
+                                        themeMode = themeMode,
+                                        updateState = updateState,
+                                        appVersion = BuildConfig.VERSION_NAME,
+                                        onThemeChange = viewModel::setThemeMode,
+                                        onCheckForUpdate = { viewModel.checkForUpdate(force = true) },
+                                        onOpenRelease = ::openRelease,
+                                        onSave = { key, newGoal ->
+                                            viewModel.saveSettings(key, newGoal)
+                                            screen = Screen.Home
+                                        },
+                                        onBack = { screen = Screen.Home }
+                                    )
+                                }
                             }
-                            Screen.AddMeal -> {
-                                val pending by viewModel.pendingEstimate.collectAsState()
-                                AddMealScreen(
-                                    pending = pending,
-                                    onEstimate = { viewModel.estimateMeal(it) },
-                                    onConfirm = {
-                                        viewModel.confirmPendingMeal()
-                                        screen = Screen.Home
-                                    },
-                                    onDiscard = { viewModel.discardPendingMeal() },
-                                    onBack = {
-                                        viewModel.discardPendingMeal()
-                                        screen = Screen.Home
-                                    }
-                                )
-                            }
-                            Screen.History -> {
-                                val days by viewModel.historyDays.collectAsState()
-                                val weekly by viewModel.weekly.collectAsState()
-                                val goal by viewModel.goal.collectAsState()
-                                HistoryScreen(
-                                    days = days,
-                                    goal = goal,
-                                    weekly = weekly,
-                                    onDayClick = { key ->
-                                        viewModel.selectDay(key)
-                                        screen = Screen.DayDetail(key)
-                                    },
-                                    onBack = { screen = Screen.Home }
-                                )
-                            }
-                            is Screen.DayDetail -> {
-                                val meals by viewModel.selectedDayMeals.collectAsState()
-                                val goal by viewModel.goal.collectAsState()
-                                DayDetailScreen(
-                                    dayKey = current.dayKey,
-                                    goal = goal,
-                                    meals = meals,
-                                    onBack = {
-                                        viewModel.selectDay(null)
-                                        screen = Screen.History
-                                    }
-                                )
-                            }
-                            Screen.Settings -> {
-                                val apiKey by viewModel.apiKey.collectAsState()
-                                val goal by viewModel.goal.collectAsState()
-                                val updateState by viewModel.updateState.collectAsState()
-                                SettingsScreen(
-                                    apiKey = apiKey.orEmpty(),
-                                    goal = goal,
-                                    themeMode = themeMode,
-                                    updateState = updateState,
-                                    appVersion = BuildConfig.VERSION_NAME,
-                                    onThemeChange = viewModel::setThemeMode,
-                                    onCheckForUpdate = { viewModel.checkForUpdate(force = true) },
-                                    onOpenRelease = ::openRelease,
-                                    onSave = { key, newGoal ->
-                                        viewModel.saveSettings(key, newGoal)
-                                        screen = Screen.Home
-                                    },
-                                    onBack = { screen = Screen.Home }
-                                )
-                            }
-                        }
                         }
                     }
                 }
