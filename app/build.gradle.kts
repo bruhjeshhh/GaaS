@@ -103,5 +103,9 @@ dependencies {
     // EncryptedSharedPreferences for the API key + daily goal
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
+    // Google Sign-In through the platform Credential Manager (no Firebase needed)
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
