@@ -1,9 +1,29 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
 }
+
+// Signing material never lives in git. Drop a keystore.properties at the repo
+// root when you're ready to upload a bundle; CI keeps building unsigned.
+val signingProps = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) load(file.inputStream())
+}
+
+// Google Sign-In needs the OAuth *Web* client id, not the Android one. An env
+// var wins so CI can inject it without touching local.properties.
+val localProps = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) load(file.inputStream())
+}
+val webClientId = (System.getenv("GOOGLE_WEB_CLIENT_ID")
+    ?: localProps.getProperty("google.web.client.id", ""))
+    .replace("\\", "\\\\")
+    .replace("\"", "\\\"")
 
 android {
     namespace = "com.brajesh.gaas"
@@ -17,11 +37,27 @@ android {
         targetSdk = 36
         versionCode = 2
         versionName = "1.3.0"
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$webClientId\"")
+    }
+
+    signingConfigs {
+        create("release") {
+            val storePath = signingProps.getProperty("storeFile")
+            if (storePath != null) {
+                storeFile = rootProject.file(storePath)
+                storePassword = signingProps.getProperty("storePassword")
+                keyAlias = signingProps.getProperty("keyAlias")
+                keyPassword = signingProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (signingProps.getProperty("storeFile") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
