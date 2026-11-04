@@ -14,7 +14,8 @@ data class MacroGoal(
 )
 
 /**
- * Holds the Gemini API key, the user's daily macro goal, and the theme choice.
+ * Holds the Gemini API key, the user's daily macro goal, the theme choice, and
+ * the optional Google profile used only for greeting.
  * Backed by EncryptedSharedPreferences rather than plain SharedPreferences —
  * the key is still extractable on a rooted/decompiled device, but this at
  * least keeps it off disk in plaintext and out of a routine backup dump.
@@ -69,6 +70,23 @@ class SettingsStore(context: Context) {
     val isOnboarded: Boolean
         get() = geminiApiKey != null && goal != null
 
+    /** Optional Google profile. Signing in never gates tracking — it's cosmetic. */
+    var googleAccount: GoogleAccount?
+        get() {
+            val email = prefs.getString(KEY_GOOGLE_EMAIL, null) ?: return null
+            return GoogleAccount(prefs.getString(KEY_GOOGLE_NAME, null), email)
+        }
+        set(value) {
+            if (value == null) {
+                prefs.edit { remove(KEY_GOOGLE_EMAIL).remove(KEY_GOOGLE_NAME) }
+            } else {
+                prefs.edit {
+                    putString(KEY_GOOGLE_EMAIL, value.email)
+                    putString(KEY_GOOGLE_NAME, value.name)
+                }
+            }
+        }
+
     /**
      * Light/dark/system preference. Anything unreadable or written by a newer
      * build falls back to SYSTEM so a bad value can never brick startup.
@@ -95,5 +113,7 @@ class SettingsStore(context: Context) {
         private const val KEY_GOAL_FAT = "goal_fat"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_DISMISSED_UPDATE = "dismissed_update_version"
+        private const val KEY_GOOGLE_EMAIL = "google_email"
+        private const val KEY_GOOGLE_NAME = "google_name"
     }
 }
