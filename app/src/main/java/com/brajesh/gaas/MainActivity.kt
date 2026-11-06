@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel: MacroViewModel = viewModel(factory = MacroViewModel.Factory(repo))
             val themeMode by viewModel.themeMode.collectAsState()
+            val googleAccount by viewModel.googleAccount.collectAsState()
 
             GaaSTheme(themeMode) {
                 Surface(modifier = Modifier, color = MaterialTheme.colorScheme.background) {
@@ -68,10 +69,15 @@ class MainActivity : ComponentActivity() {
                     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
 
                     if (!onboarded) {
-                        OnboardingScreen(onComplete = { key, goal ->
-                            viewModel.completeOnboarding(key, goal)
-                            onboarded = true
-                        })
+                        OnboardingScreen(
+                            googleAccount = googleAccount,
+                            onGoogleSignIn = viewModel::setGoogleAccount,
+                            onGoogleSignOut = { viewModel.setGoogleAccount(null) },
+                            onComplete = { key, goal ->
+                                viewModel.completeOnboarding(key, goal)
+                                onboarded = true
+                            }
+                        )
                     } else {
                         // The nav "stack" is a single state var, so system back has to be
                         // unwound by hand — otherwise it exits the app from a sub-screen.

@@ -11,10 +11,16 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.brajesh.gaas.data.GoogleAccount
 import com.brajesh.gaas.data.MacroGoal
 
 @Composable
-fun OnboardingScreen(onComplete: (apiKey: String, goal: MacroGoal) -> Unit) {
+fun OnboardingScreen(
+    googleAccount: GoogleAccount?,
+    onGoogleSignIn: (GoogleAccount) -> Unit,
+    onGoogleSignOut: () -> Unit,
+    onComplete: (apiKey: String, goal: MacroGoal) -> Unit
+) {
     var apiKey by remember { mutableStateOf("") }
     var calories by remember { mutableStateOf("") }
     var protein by remember { mutableStateOf("") }
@@ -43,6 +49,20 @@ fun OnboardingScreen(onComplete: (apiKey: String, goal: MacroGoal) -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+
+        ElevatedCard(Modifier.fillMaxWidth()) {
+            Column(
+                Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Optional: link Google", style = MaterialTheme.typography.titleMedium)
+                GoogleSignInButton(
+                    account = googleAccount,
+                    onSignedIn = onGoogleSignIn,
+                    onSignedOut = onGoogleSignOut
+                )
+            }
         }
 
         ElevatedCard(Modifier.fillMaxWidth()) {
