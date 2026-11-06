@@ -1,6 +1,7 @@
 package com.brajesh.gaas.repository
 
 import com.brajesh.gaas.data.DaySummary
+import com.brajesh.gaas.data.GoogleAccount
 import com.brajesh.gaas.data.MacroGoal
 import com.brajesh.gaas.data.MealDao
 import com.brajesh.gaas.data.MealEntry
@@ -62,6 +63,8 @@ class MacroRepository(
     fun setThemeMode(mode: ThemeMode) { settings.themeMode = mode }
     fun dismissedUpdateVersion(): String? = settings.dismissedUpdateVersion
     fun setDismissedUpdateVersion(version: String?) { settings.dismissedUpdateVersion = version }
+    fun googleAccount(): GoogleAccount? = settings.googleAccount
+    fun setGoogleAccount(account: GoogleAccount?) { settings.googleAccount = account }
     val isOnboarded: Boolean get() = settings.isOnboarded
 
     fun mealsForDay(dayKey: String): Flow<List<MealEntry>> = dao.mealsForDay(dayKey)

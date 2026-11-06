@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.brajesh.gaas.BuildConfig
 import com.brajesh.gaas.data.DaySummary
+import com.brajesh.gaas.data.GoogleAccount
 import com.brajesh.gaas.data.MacroGoal
 import com.brajesh.gaas.data.MealEntry
 import com.brajesh.gaas.data.ThemeMode
@@ -60,6 +61,15 @@ class MacroViewModel(private val repo: MacroRepository) : ViewModel() {
      */
     private val _themeMode = MutableStateFlow(repo.themeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode
+
+    /** Optional Google profile; sign-in is never required to use the app. */
+    private val _googleAccount = MutableStateFlow(repo.googleAccount())
+    val googleAccount: StateFlow<GoogleAccount?> = _googleAccount
+
+    fun setGoogleAccount(account: GoogleAccount?) {
+        repo.setGoogleAccount(account)
+        _googleAccount.value = account
+    }
 
     /** Per-day totals for the history list, newest first — powered by the GROUP BY query. */
     val historyDays: StateFlow<List<DaySummary>> =
