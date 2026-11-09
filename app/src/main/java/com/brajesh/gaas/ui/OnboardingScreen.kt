@@ -51,6 +51,8 @@ fun OnboardingScreen(
             )
         }
 
+        ApiKeyTutorialCard()
+
         ElevatedCard(Modifier.fillMaxWidth()) {
             Column(
                 Modifier.padding(16.dp),
