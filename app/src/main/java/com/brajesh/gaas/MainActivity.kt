@@ -29,6 +29,7 @@ import com.brajesh.gaas.data.AppDatabase
 import com.brajesh.gaas.data.SettingsStore
 import com.brajesh.gaas.repository.MacroRepository
 import com.brajesh.gaas.ui.AddMealScreen
+import com.brajesh.gaas.ui.BottomTab
 import com.brajesh.gaas.ui.DayDetailScreen
 import com.brajesh.gaas.ui.HistoryScreen
 import com.brajesh.gaas.ui.HomeScreen
@@ -67,6 +68,18 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier, color = MaterialTheme.colorScheme.background) {
                     var onboarded by remember { mutableStateOf(repo.isOnboarded) }
                     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
+
+                    val navigate: (BottomTab) -> Unit = { tab ->
+                        if (screen == Screen.AddMeal && tab != BottomTab.ADD) {
+                            viewModel.discardPendingMeal()
+                        }
+                        screen = when (tab) {
+                            BottomTab.HOME -> Screen.Home
+                            BottomTab.ADD -> Screen.AddMeal
+                            BottomTab.HISTORY -> Screen.History
+                            BottomTab.SETTINGS -> Screen.Settings
+                        }
+                    }
 
                     if (!onboarded) {
                         OnboardingScreen(
@@ -124,14 +137,14 @@ class MainActivity : ComponentActivity() {
                                     HomeScreen(
                                         totals = totals,
                                         meals = meals,
+                                        accountName = googleAccount?.name ?: googleAccount?.email,
                                         updateState = updateState,
                                         onGetUpdate = ::openRelease,
                                         onDismissUpdate = viewModel::dismissUpdate,
-                                        onAddMeal = { screen = Screen.AddMeal },
+                                        onAddMeal = { navigate(BottomTab.ADD) },
                                         onDeleteMeal = { viewModel.deleteMeal(it) },
                                         onUndoDelete = { viewModel.restoreMeal(it) },
-                                        onOpenHistory = { screen = Screen.History },
-                                        onOpenSettings = { screen = Screen.Settings }
+                                        onNavigate = navigate
                                     )
                                 }
                                 Screen.AddMeal -> {
@@ -162,7 +175,8 @@ class MainActivity : ComponentActivity() {
                                             viewModel.selectDay(key)
                                             screen = Screen.DayDetail(key)
                                         },
-                                        onBack = { screen = Screen.Home }
+                                        onNavigate = navigate,
+                                        onBack = { navigate(BottomTab.HOME) }
                                     )
                                 }
                                 is Screen.DayDetail -> {
@@ -188,14 +202,18 @@ class MainActivity : ComponentActivity() {
                                         themeMode = themeMode,
                                         updateState = updateState,
                                         appVersion = BuildConfig.VERSION_NAME,
+                                        googleAccount = googleAccount,
+                                        onGoogleSignIn = viewModel::setGoogleAccount,
+                                        onGoogleSignOut = { viewModel.setGoogleAccount(null) },
                                         onThemeChange = viewModel::setThemeMode,
                                         onCheckForUpdate = { viewModel.checkForUpdate(force = true) },
                                         onOpenRelease = ::openRelease,
                                         onSave = { key, newGoal ->
                                             viewModel.saveSettings(key, newGoal)
-                                            screen = Screen.Home
+                                            navigate(BottomTab.HOME)
                                         },
-                                        onBack = { screen = Screen.Home }
+                                        onNavigate = navigate,
+                                        onBack = { navigate(BottomTab.HOME) }
                                     )
                                 }
                             }

@@ -42,6 +42,7 @@ fun HistoryScreen(
     goal: MacroGoal?,
     weekly: List<DaySlice>,
     onDayClick: (String) -> Unit,
+    onNavigate: (BottomTab) -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -50,7 +51,8 @@ fun HistoryScreen(
                 title = { Text("History") },
                 navigationIcon = { BackArrow(onBack) }
             )
-        }
+        },
+        bottomBar = { GaaSBottomBar(BottomTab.HISTORY, onNavigate) }
     ) { padding ->
         LazyColumn(
             modifier = Modifier

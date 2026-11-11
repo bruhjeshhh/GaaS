@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.brajesh.gaas.data.GoogleAccount
 import com.brajesh.gaas.data.MacroGoal
 import com.brajesh.gaas.data.ThemeMode
 import com.brajesh.gaas.network.UpdateState
@@ -51,10 +52,14 @@ fun SettingsScreen(
     themeMode: ThemeMode,
     updateState: UpdateState,
     appVersion: String,
+    googleAccount: GoogleAccount?,
+    onGoogleSignIn: (GoogleAccount) -> Unit,
+    onGoogleSignOut: () -> Unit,
     onThemeChange: (ThemeMode) -> Unit,
     onCheckForUpdate: () -> Unit,
     onOpenRelease: (String) -> Unit,
     onSave: (apiKey: String, goal: MacroGoal) -> Unit,
+    onNavigate: (BottomTab) -> Unit,
     onBack: () -> Unit
 ) {
     var key by remember { mutableStateOf(apiKey) }
@@ -71,7 +76,8 @@ fun SettingsScreen(
                 title = { Text("Settings") },
                 navigationIcon = { BackArrow(onBack) }
             )
-        }
+        },
+        bottomBar = { GaaSBottomBar(BottomTab.SETTINGS, onNavigate) }
     ) { padding ->
         Column(
             modifier = Modifier
