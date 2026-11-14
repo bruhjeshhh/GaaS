@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -19,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -114,15 +116,23 @@ private fun DayRow(
                         )
                     }
                 }
-                Text(
-                    text = if (hasGoal) {
-                        "${summary.calories.roundToInt()} / ${goalCal.roundToInt()} kcal"
-                    } else {
-                        "${summary.calories.roundToInt()} kcal"
-                    },
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                )
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (over) MaterialTheme.colorScheme.errorContainer
+                    else MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = if (over) MaterialTheme.colorScheme.onErrorContainer
+                    else MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Text(
+                        text = if (hasGoal) {
+                            "${summary.calories.roundToInt()} / ${goalCal.roundToInt()} kcal"
+                        } else {
+                            "${summary.calories.roundToInt()} kcal"
+                        },
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
             }
             Text(
                 text = when {

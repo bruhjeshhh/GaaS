@@ -19,8 +19,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -155,10 +157,12 @@ private fun WeeklyBarChart(
                     val barHeight = ((v / scaleTop) * plotBottom).toFloat()
                     val top = plotBottom - barHeight
                     val over = goalValue != null && goalValue > 0 && v > goalValue
-                    drawRect(
-                        color = if (over) errorColor else barColor,
+                    val fill = if (over) errorColor else barColor
+                    drawRoundRect(
+                        brush = Brush.verticalGradient(listOf(fill, fill.copy(alpha = 0.55f))),
                         topLeft = Offset(cx - barWidth / 2, top),
-                        size = Size(barWidth, barHeight)
+                        size = Size(barWidth, barHeight),
+                        cornerRadius = CornerRadius(10.dp.toPx().coerceAtMost(barHeight / 2))
                     )
                     val label = v.roundToInt().toString()
                     val layout = textMeasurer.measure(label, dataLabelStyle)
@@ -171,10 +175,11 @@ private fun WeeklyBarChart(
                     // No meals logged that day: hollow dashed slot, not a zero bar.
                     val barHeight = plotBottom * 0.35f
                     val top = plotBottom - barHeight
-                    drawRect(
+                    drawRoundRect(
                         color = outlineVariantColor,
                         topLeft = Offset(cx - barWidth / 2, top),
                         size = Size(barWidth, barHeight),
+                        cornerRadius = CornerRadius(10.dp.toPx()),
                         style = Stroke(
                             width = 1.5.dp.toPx(),
                             pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))

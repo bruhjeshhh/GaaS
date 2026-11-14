@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ElevatedCard
@@ -18,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
@@ -94,9 +96,23 @@ private fun MealCard(meal: MealEntry, onDelete: (() -> Unit)?, modifier: Modifie
                 Text(
                     meal.rawText,
                     style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 2,
                     modifier = Modifier.weight(1f)
                 )
-                if (onDelete != null) {
+                if (onDelete == null) {
+                    Spacer(Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ) {
+                        Text(
+                            "${meal.calories.roundToInt()} kcal",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                        )
+                    }
+                } else {
                     IconButton(onClick = onDelete) {
                         Icon(
                             Icons.Default.Delete,
