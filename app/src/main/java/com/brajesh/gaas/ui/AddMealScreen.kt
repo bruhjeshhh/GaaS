@@ -6,13 +6,16 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.brajesh.gaas.viewmodel.PendingEstimate
 import kotlin.math.roundToInt
@@ -45,12 +48,31 @@ fun AddMealScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                "Describe what you ate, as loosely as you like — quantities, homemade " +
-                    "stuff, \"a little of this and that\" is fine.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Describe what you ate, as loosely as you like — quantities, homemade " +
+                        "stuff, \"a little of this and that\" is fine.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("2 rotis with dal", "a bowl of curd rice", "chicken biryani, half plate").forEach { example ->
+                    AssistChip(
+                        onClick = { text = example },
+                        label = { Text(example) }
+                    )
+                }
+            }
 
             OutlinedTextField(
                 value = text,
@@ -122,7 +144,11 @@ private fun ReviewCard(ready: PendingEstimate.Ready, onConfirm: () -> Unit, onDi
     val meal = ready.parsed
     ElevatedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Review before saving", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Review before saving",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
 
             Column {
                 meal.items.forEachIndexed { index, item ->
@@ -156,35 +182,51 @@ private fun ReviewCard(ready: PendingEstimate.Ready, onConfirm: () -> Unit, onDi
 
             HorizontalDivider()
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "${meal.totalCalories.roundToInt()} kcal",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "P ${meal.totalProteinG.roundToInt()}g · " +
-                        "C ${meal.totalCarbsG.roundToInt()}g · " +
-                        "F ${meal.totalFatG.roundToInt()}g",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Text(
+                "${meal.totalCalories.roundToInt()} kcal",
+                style = MaterialTheme.typography.displaySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MacroBadge("P", meal.totalProteinG, MaterialTheme.colorScheme.secondary, Modifier.weight(1f))
+                MacroBadge("C", meal.totalCarbsG, MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
+                MacroBadge("F", meal.totalFatG, Color(0xFFF57C00), Modifier.weight(1f))
             }
 
-            Text(
-                meal.assumptionsNote,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    meal.assumptionsNote,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = onDiscard, modifier = Modifier.weight(1f)) { Text("Discard") }
                 Button(onClick = onConfirm, modifier = Modifier.weight(1f)) { Text("Log it") }
             }
+        }
+    }
+}
+
+@Composable
+private fun MacroBadge(label: String, value: Double, color: Color, modifier: Modifier = Modifier) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.14f),
+        contentColor = color,
+        modifier = modifier
+    ) {
+        Column(
+            Modifier.padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("$label · ${value.roundToInt()}g", style = MaterialTheme.typography.labelLarge)
         }
     }
 }
