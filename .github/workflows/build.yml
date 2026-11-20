@@ -35,6 +35,16 @@ jobs:
         continue-on-error: true
         run: ./gradlew lintDebug --no-daemon
 
+      - name: Build release AAB (unsigned unless a keystore is configured)
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaas-release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
