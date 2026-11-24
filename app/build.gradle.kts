@@ -106,6 +106,8 @@ dependencies {
     // Google Sign-In through the platform Credential Manager (no Firebase needed)
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    // GetGoogleIdOption / GoogleIdTokenCredential ship in this separate artifact.
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
