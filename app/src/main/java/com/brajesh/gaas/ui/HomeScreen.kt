@@ -128,7 +128,7 @@ private fun HeroCard(totals: DayTotals, accountName: String?, onAddMeal: () -> U
     val hasGoal = goal != null && goal.calories > 0
     val over = hasGoal && totals.remainingCalories < 0
     val remaining = if (over) -totals.remainingCalories else totals.remainingCalories
-    val progress = if (hasGoal) {
+    val progress = if (goal != null && goal.calories > 0) {
         (totals.consumedCalories / goal.calories).coerceIn(0.0, 1.0).toFloat()
     } else 0f
     val onHero = MaterialTheme.colorScheme.onPrimary
@@ -159,8 +159,8 @@ private fun HeroCard(totals: DayTotals, accountName: String?, onAddMeal: () -> U
         Text(
             when {
                 !hasGoal -> "Set a daily goal in Settings to see your remaining budget."
-                over -> "kcal over your ${goal.calories.roundToInt()} goal today"
-                else -> "kcal left of ${goal.calories.roundToInt()} today"
+                over -> "kcal over your ${goal?.calories?.roundToInt() ?: 0} goal today"
+                else -> "kcal left of ${goal?.calories?.roundToInt() ?: 0} today"
             },
             style = MaterialTheme.typography.bodyMedium,
             color = onHero.copy(alpha = 0.86f)
