@@ -30,7 +30,7 @@
     <!-- bowl rim -->
     <path
         android:pathData="M28,52 H80"
-        android:strokeColor="#9EF1F1"
+        android:strokeColor="#B2F2E4"
         android:strokeWidth="3"
         android:strokeLineCap="round" />
 </vector>

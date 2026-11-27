@@ -16,7 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -101,7 +101,7 @@ fun HomeScreen(
                 item {
                     EmptyState(
                         text = "Nothing logged yet — tap \"Log a meal\" to add your first meal.",
-                        icon = Icons.Default.List
+                        icon = Icons.AutoMirrored.Filled.List
                     )
                 }
             }
