@@ -130,8 +130,8 @@ release AAB as artifacts. Any `v*` tag publishes a stable APK release.
    `app/build/outputs/bundle/release/app-release.aab`. Upload that, not an APK.
 4. **Store listing** — app name "GaaS — Gains as a Service", category
    Health & Fitness, short description: "Log meals in plain language and see
-   their macros instantly." The adaptive launcher icon is in `res/mipmap`;
-   export a 512×512 PNG for the listing.
+   their macros instantly." A matching 512×512 listing PNG is committed at
+   `play/store-icon-512.png`.
 5. **Privacy policy URL** — publish a page (GitHub Pages is free) stating what
    is collected and why. No account data is sent to GaaS servers (there are
    none); meal text goes to Gemini and an optional Google name/email is kept
